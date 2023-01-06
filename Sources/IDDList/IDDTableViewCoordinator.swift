@@ -1,5 +1,5 @@
 //
-//  IDDListCoordinator.swift
+//  IDDTableViewCoordinator.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -17,10 +17,11 @@ enum UpdateSource {
     case fromCoordinator
 }
 
-public final class IDDListCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
+public final class IDDTableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
     where RowValue: Identifiable, RowValue: Equatable
 {
     var rows: [RowValue]
+    // this is update each time a new is created
     var parent: IDDList<RowValue>
     var updateStatus: UpdateSource = .none
 
@@ -36,7 +37,6 @@ public final class IDDListCoordinator<RowValue>: NSObject, NSTableViewDelegate, 
               !rows.isEmpty
         else { return }
 
-        Log4swift[Self.self].info("updateStatus: \(updateStatus)")
         guard updateStatus != .fromNSView
         else { return }
         updateStatus = .fromCoordinator
@@ -59,10 +59,22 @@ public final class IDDListCoordinator<RowValue>: NSObject, NSTableViewDelegate, 
         guard let tableColumn,
               let column = parent.columns.first(where: { $0.id == tableColumn.identifier })
         else { return nil }
-        let cell = IDDListCell.make(in: tableView)
+        let cell = IDDTableViewCell.makeView(in: tableView)
+
+        var frame = column.width.frame
+        if tableView.tableColumns.count == 1 {
+            let width = tableColumn.width
+            frame = (minWidth: width, idealWidth: width, maxWidth: width)
+        }
+
+//        Log4swift[Self.self].info("column: '\(column.title)' frame: '\(frame)'")
+//        Log4swift[Self.self].info("alignment: '\(column.alignment == .trailing ? "trailing" : "")'")
 
         cell.hostingView.rootView = AnyView(column
             .cellView(rows[row])
+            // .frame(width: frame.minWidth, alignment: column.alignment)
+            .frame(minWidth: frame.minWidth, idealWidth: frame.idealWidth, maxWidth: frame.maxWidth, alignment: column.alignment)
+            // .border(Color.yellow)
             .environmentObject(cell.cellModel)
         )
         cell.hostingView.invalidateIntrinsicContentSize()
@@ -82,6 +94,13 @@ public final class IDDListCoordinator<RowValue>: NSObject, NSTableViewDelegate, 
         row: Int
     ) -> Any? {
         rows[row]
+    }
+
+    public func tableView(
+        _ tableView: NSTableView,
+        sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]
+    ) {
+        parent.updateSorting(from: tableView.sortDescriptors)
     }
 }
 

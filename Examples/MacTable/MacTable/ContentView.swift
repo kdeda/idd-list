@@ -14,13 +14,10 @@ struct ContentView: View {
     var cars = Store.cars
     @State var rows = Store.cars
     @State var selection: Car.ID?
-//    @State var sortDescriptors: [TableColumnSort<Car>] = [
-//        .init(
-//            compare: { $0.year < $1.year },
-//            ascending: true,
-//            columnIndex: 0 // this needs to match to the column index
-//        )
-//    ]
+    /// The initial column sort
+    @State var columnSorts: [ColumnSort<Car>] = [
+        .init(compare: { $0.year < $1.year }, ascending: true, columnID: "Year")
+    ]
     @State var showExtraColumn = false
     
     fileprivate func selectionString() -> String {
@@ -74,57 +71,64 @@ struct ContentView: View {
         VStack(spacing: 0) {
             headerView()
             Divider()
-            IDDList(rows, singleSelection: $selection) {
-//                sortDescriptors: Binding<[TableColumnSort<Car>]>(
-//                    get: {
-//                        sortDescriptors
-//                    }, set: { (sortDescriptors: [TableColumnSort<Car>]) in
-//                        self.sortDescriptors = sortDescriptors
-//
-//                        let sortDescriptor = sortDescriptors[0]
-//                        rows = rows.sorted(by: sortDescriptor.comparator)
-//                        Log4swift[Self.self].info("sorted.rows: \(rows.count)")
-//                    }
-//                )
+            IDDList(
+                rows,
+                singleSelection: $selection,
+                columnSorts: Binding<[ColumnSort<Car>]>(
+                    get: {
+                        columnSorts
+                    }, set: { newValue in
+                        self.columnSorts = newValue
+
+                        let sortDescriptor = columnSorts[0]
+                        rows = rows.sorted(by: sortDescriptor.comparator)
+                        Log4swift[Self.self].info("sorted.rows: \(rows.count)")
+                    }
+                )
+            ) {
                 IDDColumn("Year", id: "Year") { rowValue in
-                    Text("\(rowValue.year)")
-                        .textColor(.secondary)
+                    CellView { model in
+                        Text("\(rowValue.year)")
+                            .foregroundColor(model.isHighlighted ? .none : .secondary)
+                    }
                 }
-                .sortDescriptor(compare: { $0.year < $1.year })
-                .frame(width: 60)
-                
-                IDDColumn("Make", id: "Year") { rowValue in
+                .columnSort(compare: { $0.year < $1.year })
+                .width(60)
+
+                IDDColumn("Make", id: "Make") { rowValue in
                     Text(rowValue.make)
                 }
-                .sortDescriptor(compare: { $0.make < $1.make })
-                .frame(width: 80)
-                
+                .columnSort(compare: { $0.make < $1.make })
+                .width(80)
+
                 IDDColumn("", id: "empty") { rowValue in
                     Text("")
                 }
-                .sortDescriptor(compare: { _, _ in false })
-                .frame(width: 20)
-                
+                .width(20)
+
                 IDDColumn("Model", id: "Model") { rowValue in
-                    Text(rowValue.model)
+                    CellView { model in
+                        Text("\(rowValue.model)")
+                            .foregroundColor(model.isHighlighted ? .none : .yellow)
+                    }
                 }
-                .sortDescriptor(compare: { $0.model < $1.model })
-                .textColor(Color.yellow)
-                .frame(width: 80)
-                
+                .columnSort(compare: { $0.model < $1.model })
+                .alignment(.trailing)
+                .width(min: 60, ideal: 80, max: 100)
+
                 if showExtraColumn {
                     IDDColumn("Extra", id: "Extra") { rowValue in
                         Text(rowValue.extraColumn)
                     }
-                    .sortDescriptor(compare: { $0.extraColumn < $1.extraColumn })
-                    .frame(width: 160)
+                    .columnSort(compare: { $0.extraColumn < $1.extraColumn })
+                    .width(160)
                 }
-                
+
                 IDDColumn("Category", id: "Category") { rowValue in
                     Text(rowValue.category)
                 }
-                .sortDescriptor(compare: { $0.category < $1.category })
-                .frame(minWidth: 180, maxWidth: .infinity)
+                .columnSort(compare: { $0.category < $1.category })
+                .width(min: 180, ideal: 200, max: .infinity)
             }
             .id(showExtraColumn ? "showExtraColumn=true" : "showExtraColumn=false")
         }

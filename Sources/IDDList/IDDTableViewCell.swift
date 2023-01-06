@@ -10,10 +10,10 @@ import Foundation
 import SwiftUI
 import Log4swift
 
-public final class IDDListCell: NSTableCellView {
+public final class IDDTableViewCell: NSTableCellView {
     let hostingView = NSHostingView(rootView: AnyView(EmptyView()))
     private let label = NSTextField.label()
-    var cellModel = IDDListCellModel()
+    var cellModel = CellModel()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -23,8 +23,8 @@ public final class IDDListCell: NSTableCellView {
         NSLayoutConstraint.activate([
             hostingView.leadingAnchor.constraint(equalTo: leadingAnchor),
             hostingView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            hostingView.topAnchor.constraint(equalTo: topAnchor, constant: 3),
-            hostingView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3)
+            hostingView.topAnchor.constraint(equalTo: topAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
 
@@ -45,16 +45,14 @@ public final class IDDListCell: NSTableCellView {
         }
         set {
             super.backgroundStyle = newValue
-            if newValue == .emphasized {
-                Log4swift[Self.self].info("backgroundStyle: '\(cellModel.objectID)'")
-                self.cellModel.isHighlighted = true
-            } else {
-                self.cellModel.isHighlighted = false
-            }
+            // if newValue == .emphasized {
+            //     Log4swift[Self.self].info("backgroundStyle: '\(cellModel.objectID)'")
+            // }
+            self.cellModel.isHighlighted = newValue == .emphasized
         }
     }
 
-    static func make(in tableView: NSTableView) -> Self {
+    static func makeView(in tableView: NSTableView) -> Self {
         let id = NSUserInterfaceItemIdentifier(rawValue: String(describing: Self.self))
         if let view = tableView.makeView(withIdentifier: id, owner: nil) as? Self {
           return view

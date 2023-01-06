@@ -10,6 +10,24 @@ import AppKit
 import SwiftUI
 import Log4swift
 
+public final class IDDListModel<RowValue>: ObservableObject
+    where RowValue: Identifiable, RowValue: Equatable
+{
+    @Published private var singleSelection: RowValue.ID?
+    @Published private var multipleSelection: Set<RowValue.ID>
+    @Published private var columnSorts: [ColumnSort<RowValue>]
+
+    init(
+        singleSelection: RowValue.ID? = nil,
+        multipleSelection: Set<RowValue.ID>,
+        columnSorts: [ColumnSort<RowValue>]
+    ) {
+        self.singleSelection = singleSelection
+        self.multipleSelection = multipleSelection
+        self.columnSorts = columnSorts
+    }
+}
+
 public struct IDDList<RowValue>: NSViewRepresentable
     where RowValue: Identifiable, RowValue: Equatable
 {
@@ -18,12 +36,31 @@ public struct IDDList<RowValue>: NSViewRepresentable
         case multiple
     }
 
-    public var scrollAxes: Axis.Set
+    public var scrollAxes: Axis.Set = [.horizontal, .vertical]
     public var rows: [RowValue]
     private var selectionType: SelectionType
     @Binding private var singleSelection: RowValue.ID?
     @Binding private var multipleSelection: Set<RowValue.ID>
-    @Binding public var columns: [IDDColumn<RowValue>]
+    @Binding private var columnSorts: [ColumnSort<RowValue>]
+    @State public var columns: [IDDColumn<RowValue>]
+
+    private var selectedRows: IndexSet {
+        let indexArray: [Int] = {
+            switch selectionType {
+            case .single:
+                if let rowIndex = rows.firstIndex(where: { $0.id == singleSelection }) {
+                    return [rowIndex]
+                }
+                return []
+            case .multiple:
+                return rows.enumerated()
+                    .filter { multipleSelection.contains($0.element.id) }
+                    .map { $0.offset }
+            }
+        }()
+
+        return IndexSet(indexArray)
+    }
 
     private func buildTableView() -> IDDTableView<RowValue> {
         let rv = IDDTableView<RowValue>(columns: columns)
@@ -67,36 +104,54 @@ public struct IDDList<RowValue>: NSViewRepresentable
     
     // MARK: - Init -
 
+    /**
+     These can be called often
+     */
     public init(
         _ rows: [RowValue],
         singleSelection: Binding<RowValue.ID?>,
+        columnSorts: Binding<[ColumnSort<RowValue>]> = .constant([]),
         @IDDColumnBuilder<RowValue> columns: () -> [IDDColumn<RowValue>]
     ) {
         self.rows = rows
         self.selectionType = .single
         self._singleSelection = singleSelection
-        self.columns = columns()
-        Log4swift[Self.self].info("")
+        self._multipleSelection = .constant(Set())
+        self._columnSorts = columnSorts
+
+        let updatedColumns = columns().updateColumnSorts(columnSorts.wrappedValue)
+        self._columns = State(initialValue: updatedColumns)
+
+        // Log4swift[Self.self].info("")
     }
 
+    /**
+     These can be called often
+     */
     public init(
         _ rows: [RowValue],
         multipleSelection: Binding<Set<RowValue.ID>>,
+        columnSorts: Binding<[ColumnSort<RowValue>]> = .constant([]),
         @IDDColumnBuilder<RowValue> columns: () -> [IDDColumn<RowValue>]
     ) {
         self.rows = rows
         self.selectionType = .multiple
+        self._singleSelection = .constant(.none)
         self._multipleSelection = multipleSelection
-        self.columns = columns()
-        Log4swift[Self.self].info("")
+        self._columnSorts = columnSorts
+
+        let updatedColumns = columns().updateColumnSorts(columnSorts.wrappedValue)
+        self._columns = State(initialValue: updatedColumns)
+
+        // Log4swift[Self.self].info("")
     }
 
     // MARK: - NSViewRepresentable overrides -
-    
-    public typealias NSViewType = IDDTableScrollView<RowValue>
-    
-    // Gets called once per view "identity"
-    public func makeNSView(context: Context) -> NSViewType {
+
+    /**
+     Gets called once per view "identity"
+     */
+    public func makeNSView(context: Context) -> IDDTableScrollView<RowValue> {
         let tableView = buildTableView()
         let scrollView = buildScrollView(tableView: tableView)
 
@@ -106,19 +161,24 @@ public struct IDDList<RowValue>: NSViewRepresentable
         return scrollView
     }
 
-    // Gets called whenever `model` changes
-    public func updateNSView(_ nsView: NSViewType, context: Context) {
-        Log4swift[Self.self].info("updateStatus: \(context.coordinator.updateStatus)")
-
+    /**
+     Gets called whenever `model` changes. So probably frequently
+     */
+    public func updateNSView(_ nsView: IDDTableScrollView<RowValue>, context: Context) {
         guard context.coordinator.updateStatus != .fromCoordinator
         else { return }
         context.coordinator.updateStatus = .fromNSView
         defer { context.coordinator.updateStatus = .none }
 
+        // Log4swift[Self.self].info("detected changes ...")
+
         let tableView = nsView.tableView
         context.coordinator.parent = self
         if context.coordinator.rows != rows {
+            // let oldRows = context.coordinator.rows
             context.coordinator.rows = rows
+
+            Log4swift[Self.self].info("detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
         }
 
@@ -132,34 +192,69 @@ public struct IDDList<RowValue>: NSViewRepresentable
 
         // preserve reservation from state
         DispatchQueue.main.async {
-            let indexArray = rows
-                .indices
-                .filter { multipleSelection.contains(rows[$0].id) }
-            let indices = IndexSet(indexArray)
+            let indices = selectedRows
             guard !indices.isEmpty,
                   tableView.selectedRowIndexes != indices
             else { return }
-            print("selecting", indices.map { $0.description })
-            tableView.selectRowIndexes(
-                indices,
-                byExtendingSelection: false
-            )
+
+            Log4swift[Self.self].info("selected: '\(rows[indices.first!])'")
+            Log4swift[Self.self].info("updating selections: '\(indices.map { $0.description })'")
+
+            tableView.selectRowIndexes(indices, byExtendingSelection: false)
+            if let first = indices.first {
+                tableView.scrollRowToVisible(first)
+            }
         }
     }
     
     // MARK: - Coordinator -
     
-    public func makeCoordinator() -> IDDListCoordinator<RowValue> {
+    /**
+     Gets called once per view "identity"
+     */
+    public func makeCoordinator() -> IDDTableViewCoordinator<RowValue> {
         Log4swift[Self.self].info("makeCoordinator")
-        return IDDListCoordinator(self, rows: rows)
+        return IDDTableViewCoordinator(self, rows: rows)
     }
 
     // MARK: - Helpers -
-    
-    public func updateSelection(from indices: IndexSet) {
+
+    /**
+     Convenience, Called from the Coordinator since we manage the state
+     */
+    func updateSelection(from indices: IndexSet) {
         let indices = Set(indices.map { rows[$0].id })
 
         multipleSelection = indices
+    }
+
+    /**
+     Convenience, Called from the Coordinator since we manage the state.
+     For now we support only one column sorting :-)
+     */
+    func updateSorting(from sortDescriptors: [NSSortDescriptor]) {
+        guard let first = sortDescriptors.first
+        else { return }
+
+        let newSorts = [first] // sortDescriptors
+        let configuredColumnSorts = columns.map { $0.columnSort }
+        let updated = newSorts
+            .compactMap { sort in
+                if let match = configuredColumnSorts.first(where: { $0.key == sort.key }) {
+                    var copy = match
+                    copy.ascending = sort.ascending
+                    return copy
+                }
+                return nil
+            }
+
+        guard !updated.isEmpty
+        else {
+            // should not get here
+            Log4swift[Self.self].error("found no match from: '\(sortDescriptors)'")
+            return }
+
+        self.columnSorts = updated
     }
 }
 

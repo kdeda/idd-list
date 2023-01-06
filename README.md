@@ -1,8 +1,10 @@
 # IDDList
 
-This is a custom made SwiftUI.List clone with all the source code to go with it.
-It has benefits and can be used as a full table column.
-It is a wrapper to the fantastic NSTableView.
+This is an effort at a more flexible replacement to SwiftUI.List
+A huge benefit is access to source code so one can learn and extend this component.
+Apple's SwiftUI.List is cute until you want to tweak it just a bit.
+It can be used as a SwiftUI.TableView as well.
+It is build as a wrapper around the fantastic AppKit.NSTableView.
 It supports macOS 11 and above.
 
 It is able to handle a giant amount of rows, 500k with no problem. Take that SwiftUI.List

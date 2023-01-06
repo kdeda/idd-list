@@ -10,7 +10,7 @@ import Foundation
 import Combine
 import ComposableArchitecture
 import Log4swift
-import TableView
+import IDDList
 import SwiftUI
 
 struct AppRoot: ReducerProtocol {
@@ -20,12 +20,8 @@ struct AppRoot: ReducerProtocol {
         var isAppReady = false
         var files: [File] = []
         @BindableState var selectedFiles: Set<File.ID> = []
-        @BindableState var sortDescriptors: [TableColumnSort<File>] = [
-            .init(
-                compare: { $0.physicalSize < $1.physicalSize },
-                ascending: true,
-                columnIndex: 0 // this needs to match to the column index
-            )
+        @BindableState var columnSorts: [ColumnSort<File>] = [
+            .init(compare: { $0.physicalSize < $1.physicalSize }, ascending: true, columnID: "Year")
         ]
     }
 
@@ -34,7 +30,7 @@ struct AppRoot: ReducerProtocol {
         case appDidStart
         case setFiles([File])
         case selectedFilesDidChange([File])
-        case sortFiles(TableColumnSort<File>)
+        case sortFiles(ColumnSort<File>)
     }
 
     @Dependency(\.fileClient) var fileClient
@@ -55,8 +51,8 @@ struct AppRoot: ReducerProtocol {
 //                return Effect(value: .selectedFilesDidChange(files))
                 return .none
 
-            case .binding(\.$sortDescriptors):
-                return Effect(value: .sortFiles(state.sortDescriptors[0]))
+            case .binding(\.$columnSorts):
+                return Effect(value: .sortFiles(state.columnSorts[0]))
 
             case .binding:
                 return .none
@@ -81,15 +77,15 @@ struct AppRoot: ReducerProtocol {
 
                 // preserve selection
                 state.selectedFiles = Set(newSelection.map(\.id))
-                return Effect(value: .sortFiles(state.sortDescriptors[0]))
+                return Effect(value: .sortFiles(state.columnSorts[0]))
 
             case let .selectedFilesDidChange(newValue):
                 state.selectedFiles = Set(newValue.map(\.id))
                 return .none
 
-            case let .sortFiles(sortDescriptor):
+            case let .sortFiles(columnSort):
                 var startDate = Date()
-                Log4swift[Self.self].info("sortDescriptor.ascending: '\(sortDescriptor.ascending)'")
+                Log4swift[Self.self].info("columnSort.ascending: '\(columnSort.ascending)'")
 
 //                var files = state.files
 //                files.sort(by: { lhs, rhs in
@@ -110,7 +106,7 @@ struct AppRoot: ReducerProtocol {
                 Log4swift[Self.self].info("sortFiles: '\(state.files.count) nodes' in: '\(startDate.elapsedTime) ms'")
 
                 startDate = Date()
-                state.files.sort(by: sortDescriptor.comparator)
+                state.files.sort(by: columnSort.comparator)
                 // 12 seconds first time, 1.5 after ...
                 Log4swift[Self.self].info("sortFiles: '\(state.files.count) nodes' in: '\(startDate.elapsedTime) ms'")
 

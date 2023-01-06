@@ -17,9 +17,9 @@
 		F3D182FA27873C39001377CC /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = F3D182F927873C39001377CC /* ComposableArchitecture */; };
 		F3D182FC27873C46001377CC /* AppRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D182FB27873C46001377CC /* AppRoot.swift */; };
 		F3D182FE27873CA1001377CC /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D182FD27873CA1001377CC /* File.swift */; };
-		F3D1830527873DFC001377CC /* TableView in Frameworks */ = {isa = PBXBuildFile; productRef = F3D1830427873DFC001377CC /* TableView */; };
 		F3D1830827873E47001377CC /* SwiftCommons in Frameworks */ = {isa = PBXBuildFile; productRef = F3D1830727873E47001377CC /* SwiftCommons */; };
 		F3FD827C29142DD800C4DB22 /* FileClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FD827B29142DD800C4DB22 /* FileClient.swift */; };
+		FB1BA42B296A02BE0069AF89 /* IDDList in Frameworks */ = {isa = PBXBuildFile; productRef = FB1BA42A296A02BE0069AF89 /* IDDList */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,10 +51,10 @@
 		F3D182E127873B8A001377CC /* TCATableUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TCATableUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3D182E527873B8A001377CC /* TCATableUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCATableUITests.swift; sourceTree = "<group>"; };
 		F3D182E727873B8A001377CC /* TCATableUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCATableUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		F3D182F427873BA9001377CC /* TableView */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = TableView; path = ../..; sourceTree = "<group>"; };
 		F3D182FB27873C46001377CC /* AppRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoot.swift; sourceTree = "<group>"; };
 		F3D182FD27873CA1001377CC /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		F3FD827B29142DD800C4DB22 /* FileClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileClient.swift; sourceTree = "<group>"; };
+		FB1BA429296A02A40069AF89 /* idd-list */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "idd-list"; path = ../..; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,7 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F3D1830527873DFC001377CC /* TableView in Frameworks */,
+				FB1BA42B296A02BE0069AF89 /* IDDList in Frameworks */,
 				F3D1830827873E47001377CC /* SwiftCommons in Frameworks */,
 				F3D182FA27873C39001377CC /* ComposableArchitecture in Frameworks */,
 			);
@@ -88,7 +88,7 @@
 		F3D182BD27873B88001377CC = {
 			isa = PBXGroup;
 			children = (
-				F3D182F427873BA9001377CC /* TableView */,
+				FB1BA429296A02A40069AF89 /* idd-list */,
 				F3D182C827873B88001377CC /* TCATable */,
 				F3D182DA27873B8A001377CC /* TCATableTests */,
 				F3D182E427873B8A001377CC /* TCATableUITests */,
@@ -180,8 +180,8 @@
 			name = TCATable;
 			packageProductDependencies = (
 				F3D182F927873C39001377CC /* ComposableArchitecture */,
-				F3D1830427873DFC001377CC /* TableView */,
 				F3D1830727873E47001377CC /* SwiftCommons */,
+				FB1BA42A296A02BE0069AF89 /* IDDList */,
 			);
 			productName = TCATable;
 			productReference = F3D182C627873B88001377CC /* TCATable.app */;
@@ -649,14 +649,14 @@
 			package = F3D182F827873C39001377CC /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
 		};
-		F3D1830427873DFC001377CC /* TableView */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = TableView;
-		};
 		F3D1830727873E47001377CC /* SwiftCommons */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F3D1830627873E47001377CC /* XCRemoteSwiftPackageReference "idd-swift-commons" */;
 			productName = SwiftCommons;
+		};
+		FB1BA42A296A02BE0069AF89 /* IDDList */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IDDList;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

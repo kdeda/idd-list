@@ -9,7 +9,7 @@
 import SwiftUI
 import ComposableArchitecture
 import Log4swift
-import TableView
+import IDDList
 
 struct AppRootView: View {
     let store: StoreOf<AppRoot>
@@ -55,83 +55,81 @@ struct AppRootView: View {
                 headerView()
                     // .border(Color.yellow)
                 Divider()
-                TableView.Table(
+                IDDList(
                     viewStore.files,
                     multipleSelection: viewStore.binding(\.$selectedFiles),
-                    sortDescriptors: viewStore.binding(\.$sortDescriptors)
+                    columnSorts: viewStore.binding(\.$columnSorts)
                 ) {
-                    TableColumn("File Size in Bytes", alignment: .trailing) { rowValue in
+                    IDDColumn("File Size in Bytes", id: "File Size in Bytes") { rowValue in
                         Text(rowValue.physicalSize.decimalFormatted)
                             .font(.subheadline)
-                            .frame(height: 24)
                     }
-                    .frame(width: 130)
-                    .sortDescriptor(compare: { $0.physicalSize < $1.physicalSize })
+                    .frame(width: 130, alignment: .trailing)
+                    .columnSort(compare: { $0.physicalSize < $1.physicalSize })
 
-                    TableColumn("On Disk", alignment: .trailing) { rowValue in
+                    IDDColumn("On Disk", id: "On Disk") { rowValue in
                         Text(rowValue.logicalSize.compactFormatted)
                             .font(.subheadline)
-                            .frame(height: 24)
                     }
-                    .frame(width: 70)
-                    .sortDescriptor(compare: { $0.logicalSize < $1.logicalSize })
+                    .frame(width: 70, alignment: .trailing)
+                    .columnSort(compare: { $0.logicalSize < $1.logicalSize })
 
-                    TableColumn("", alignment: .leading) { rowValue in
-                        HStack {
+                    IDDColumn("") { rowValue in
+                        CellView { model in
                             Image(systemName: "magnifyingglass.circle.fill")
                                 .renderingMode(.template)
                                 .resizable()
                                 .frame(width: 12, height: 12, alignment: .center)
-                                .textColor(Color.pink)
+                                .foregroundColor(model.isHighlighted ? .none : .pink)
                                 .font(.subheadline)
-                                .padding(.horizontal, 4)
-                                .frame(width: 20)
+                                .padding(2)
                             //    .onTapGesture {
                             //        // this blocks the row selection ... WTF apple
                             //        Log4swift[Self.self].info("revealInFinder: \(file.filePath)")
                             //    }
                         }
-                        .frame(height: 24)
                     }
-                    .frame(width: 20)
+                    .frame(width: 24, alignment: .center)
 
-                    TableColumn("Last Modified", alignment: .leading) { rowValue in
+                    IDDColumn("Last Modified", id: "Last Modified") { rowValue in
                         Text(File.lastModified.string(from: rowValue.modificationDate))
                             .lineLimit(1)
                             .font(.subheadline)
-                            .frame(height: 24)
                     }
                     .frame(width: 160)
-                    .sortDescriptor(compare: { $0.modificationDate < $1.modificationDate })
+                    .columnSort(compare: { $0.modificationDate < $1.modificationDate })
 
-                    TableColumn("File Name", alignment: .leading) { rowValue in
-                        Text("\(String(format: "%04d - %@", rowValue.id, rowValue.fileName))")
+                    IDDColumn("File Name", id: "File Name") { rowValue in
+                        Text("\(String(format: "[%04d] - [%@]", rowValue.id, rowValue.fileName))")
                             .lineLimit(1)
+                            .truncationMode(.middle)
                             .font(.subheadline)
-                            .frame(height: 24)
                     }
-                    .frame(width: 160)
-                    .sortDescriptor(compare: { $0.fileName < $1.fileName })
+                    .frame(minWidth: 140, ideal: 200, maxWidth: 280)
+                    .columnSort(compare: { $0.fileName < $1.fileName })
 
-                    TableColumn("", alignment: .center) { rowValue in
-                        Image(nsImage: rowValue.icon)
-                            .resizable()
-                            .frame(width: 24, height: 24)
-                    }
-                    .frame(width: 20)
-
-                    TableColumn("File Path", alignment: .leading) { rowValue in
-                        // If we want pixel perfection than we adjust the height
-                        // of this column to be the same as the icon column
-                        Text(rowValue.filePath)
-                            .lineLimit(1)
-                            .font(.subheadline)
-                            .frame(height: 24)
+                    IDDColumn("File Path", id: "File Path") { rowValue in
+                        HStack {
+                            Image(nsImage: rowValue.icon)
+                                .resizable()
+                                .frame(width: 18, height: 18)
+                            // If we want pixel perfection than we adjust the height
+                            // of this column to be the same as the icon column
+                            Text(rowValue.filePath)
+                                .lineLimit(1)
+                                .font(.subheadline)
+                        }
                     }
                     .frame(minWidth: 180, maxWidth: .infinity)
-                    .sortDescriptor(compare: { $0.filePath < $1.filePath })
+                    .columnSort(compare: { $0.filePath < $1.filePath })
                 }
-                .setIntraRowSpacing(1)
+                .introspect { tableView, scrollView in
+                    tableView.intercellSpacing = .init(width: 2, height: 1)
+                    scrollView.hasHorizontalScroller = false
+                    //  scrollView.scrollerInsets = .init(top: 0.0, left: 0.0, bottom: 14.0, right: 0.0)
+                    // // scrollView.hasVerticalScroller = false
+                    // scrollView.usesPredominantAxisScrolling = false
+                }
                 Divider()
                 HStack {
                     Spacer()

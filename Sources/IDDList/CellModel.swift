@@ -1,5 +1,5 @@
 //
-//  IDDListCellModel.swift
+//  CellModel.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -9,10 +9,11 @@
 import Foundation
 import SwiftUI
 
-public final class IDDListCellModel: ObservableObject {
+public final class CellModel: ObservableObject {
     @Published public var isHighlighted: Bool = false
 
-    public init() {
+    public init(isHighlighted: Bool = false) {
+        self.isHighlighted = isHighlighted
     }
     
     public var objectID: String {
