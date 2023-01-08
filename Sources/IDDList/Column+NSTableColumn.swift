@@ -1,5 +1,5 @@
 //
-//  IDDColumn+NSTableColumn.swift
+//  Column+NSTableColumn.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -11,7 +11,7 @@ import AppKit
 import Log4swift
 
 extension NSTableColumn {
-    convenience init<RowValue>(_ column: IDDColumn<RowValue>) {
+    convenience init<RowValue>(_ column: Column<RowValue>) {
         self.init()
         self.title = column.title
         self.identifier = column.id

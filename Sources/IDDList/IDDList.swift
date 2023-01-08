@@ -42,7 +42,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
     @Binding private var singleSelection: RowValue.ID?
     @Binding private var multipleSelection: Set<RowValue.ID>
     @Binding private var columnSorts: [ColumnSort<RowValue>]
-    @State public var columns: [IDDColumn<RowValue>]
+    @State public var columns: [Column<RowValue>]
 
     private var selectedRows: IndexSet {
         let indexArray: [Int] = {
@@ -62,8 +62,8 @@ public struct IDDList<RowValue>: NSViewRepresentable
         return IndexSet(indexArray)
     }
 
-    private func buildTableView() -> IDDTableView<RowValue> {
-        let rv = IDDTableView<RowValue>(columns: columns)
+    private func buildTableView() -> TableView<RowValue> {
+        let rv = TableView<RowValue>(columns: columns)
 
         rv.allowsMultipleSelection = selectionType == .multiple
         // data source
@@ -71,8 +71,8 @@ public struct IDDList<RowValue>: NSViewRepresentable
         return rv
     }
 
-    private func buildScrollView(tableView: IDDTableView<RowValue>) -> IDDTableScrollView<RowValue> {
-        let rv = IDDTableScrollView<RowValue>(tableView: tableView)
+    private func buildScrollView(tableView: TableView<RowValue>) -> TableScrollView<RowValue> {
+        let rv = TableScrollView<RowValue>(tableView: tableView)
 
         // content and geometry
         rv.translatesAutoresizingMaskIntoConstraints = false // has no effect?
@@ -96,8 +96,8 @@ public struct IDDList<RowValue>: NSViewRepresentable
     // MARK: - Introspection -
     
     public typealias IntrospectBlock = (
-        _ tableView: IDDTableView<RowValue>,
-        _ scrollView: IDDTableScrollView<RowValue>
+        _ tableView: TableView<RowValue>,
+        _ scrollView: TableScrollView<RowValue>
     ) -> Void
     
     internal var introspectBlocks: [IntrospectBlock] = []
@@ -111,7 +111,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         _ rows: [RowValue],
         singleSelection: Binding<RowValue.ID?>,
         columnSorts: Binding<[ColumnSort<RowValue>]> = .constant([]),
-        @IDDColumnBuilder<RowValue> columns: () -> [IDDColumn<RowValue>]
+        @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
         self.rows = rows
         self.selectionType = .single
@@ -132,7 +132,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         _ rows: [RowValue],
         multipleSelection: Binding<Set<RowValue.ID>>,
         columnSorts: Binding<[ColumnSort<RowValue>]> = .constant([]),
-        @IDDColumnBuilder<RowValue> columns: () -> [IDDColumn<RowValue>]
+        @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
         self.rows = rows
         self.selectionType = .multiple
@@ -151,7 +151,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
     /**
      Gets called once per view "identity"
      */
-    public func makeNSView(context: Context) -> IDDTableScrollView<RowValue> {
+    public func makeNSView(context: Context) -> TableScrollView<RowValue> {
         let tableView = buildTableView()
         let scrollView = buildScrollView(tableView: tableView)
 
@@ -164,7 +164,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
     /**
      Gets called whenever `model` changes. So probably frequently
      */
-    public func updateNSView(_ nsView: IDDTableScrollView<RowValue>, context: Context) {
+    public func updateNSView(_ nsView: TableScrollView<RowValue>, context: Context) {
         guard context.coordinator.updateStatus != .fromCoordinator
         else { return }
         context.coordinator.updateStatus = .fromNSView
@@ -212,9 +212,9 @@ public struct IDDList<RowValue>: NSViewRepresentable
     /**
      Gets called once per view "identity"
      */
-    public func makeCoordinator() -> IDDTableViewCoordinator<RowValue> {
+    public func makeCoordinator() -> TableViewCoordinator<RowValue> {
         Log4swift[Self.self].info("makeCoordinator")
-        return IDDTableViewCoordinator(self, rows: rows)
+        return TableViewCoordinator(self, rows: rows)
     }
 
     // MARK: - Helpers -

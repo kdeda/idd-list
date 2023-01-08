@@ -1,5 +1,5 @@
 //
-//  IDDTableView.swift
+//  TableView.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -10,12 +10,12 @@ import AppKit
 import SwiftUI
 import Log4swift
 
-public class IDDTableView<RowValue>: NSTableView
+public class TableView<RowValue>: NSTableView
     where RowValue: Identifiable, RowValue: Equatable
 {
     public var axes: Axis.Set = [.horizontal, .vertical]
 
-    init(columns: [IDDColumn<RowValue>]) {
+    init(columns: [Column<RowValue>]) {
         super.init(frame: .zero)
 
         // column setup

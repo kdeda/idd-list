@@ -1,5 +1,5 @@
 //
-//  IDDListCell.swift
+//  TableViewCell.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -10,7 +10,7 @@ import Foundation
 import SwiftUI
 import Log4swift
 
-public final class IDDTableViewCell: NSTableCellView {
+public final class TableViewCell: NSTableCellView {
     let hostingView = NSHostingView(rootView: AnyView(EmptyView()))
     private let label = NSTextField.label()
     var cellModel = CellModel()

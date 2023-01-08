@@ -1,5 +1,5 @@
 //
-//  IDDTableViewCoordinator.swift
+//  TableViewCoordinator.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -17,7 +17,7 @@ enum UpdateSource {
     case fromCoordinator
 }
 
-public final class IDDTableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
+public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
     where RowValue: Identifiable, RowValue: Equatable
 {
     var rows: [RowValue]
@@ -33,7 +33,7 @@ public final class IDDTableViewCoordinator<RowValue>: NSObject, NSTableViewDeleg
     // MARK: - NSTableViewDelegate -
 
     public func tableViewSelectionDidChange(_ notification: Notification) {
-        guard let tableView = notification.object as? IDDTableView<RowValue>,
+        guard let tableView = notification.object as? TableView<RowValue>,
               !rows.isEmpty
         else { return }
 
@@ -59,7 +59,7 @@ public final class IDDTableViewCoordinator<RowValue>: NSObject, NSTableViewDeleg
         guard let tableColumn,
               let column = parent.columns.first(where: { $0.id == tableColumn.identifier })
         else { return nil }
-        let cell = IDDTableViewCell.makeView(in: tableView)
+        let cell = TableViewCell.makeView(in: tableView)
 
         var frame = column.width.frame
         if tableView.tableColumns.count == 1 {

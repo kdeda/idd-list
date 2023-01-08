@@ -1,5 +1,5 @@
 //
-//  IDDTableScrollView.swift
+//  TableScrollView.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -9,14 +9,14 @@
 import AppKit
 import SwiftUI
 
-public class IDDTableScrollView<RowValue>: NSScrollView
+public class TableScrollView<RowValue>: NSScrollView
     where RowValue: Identifiable, RowValue: Equatable
 {
-    public let tableView: IDDTableView<RowValue>
+    public let tableView: TableView<RowValue>
     
     // MARK: - Init -
     
-    public init(tableView: IDDTableView<RowValue>) {
+    public init(tableView: TableView<RowValue>) {
         self.tableView = tableView
         super.init(frame: .zero)
     }

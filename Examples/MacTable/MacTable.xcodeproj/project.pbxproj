@@ -16,6 +16,7 @@
 		F3E9F51C277E63C400102BDC /* MacTableUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E9F51B277E63C400102BDC /* MacTableUITestsLaunchTests.swift */; };
 		F3E9F52D277E676000102BDC /* DataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E9F52C277E676000102BDC /* DataModel.swift */; };
 		F3E9F52F277E6D4200102BDC /* cars.json in Resources */ = {isa = PBXBuildFile; fileRef = F3E9F52E277E6D4200102BDC /* cars.json */; };
+		FBD7C0C6296A6FEB006F2C57 /* IDDList in Frameworks */ = {isa = PBXBuildFile; productRef = FBD7C0C5296A6FEB006F2C57 /* IDDList */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FBD7C0C6296A6FEB006F2C57 /* IDDList in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,6 +164,7 @@
 			);
 			name = MacTable;
 			packageProductDependencies = (
+				FBD7C0C5296A6FEB006F2C57 /* IDDList */,
 			);
 			productName = MacTable;
 			productReference = F3E9F4FA277E63C300102BDC /* MacTable.app */;
@@ -600,6 +603,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FBD7C0C5296A6FEB006F2C57 /* IDDList */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IDDList;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F3E9F4F2277E63C300102BDC /* Project object */;
 }

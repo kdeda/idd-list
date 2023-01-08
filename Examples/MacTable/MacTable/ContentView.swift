@@ -86,49 +86,48 @@ struct ContentView: View {
                     }
                 )
             ) {
-                IDDColumn("Year", id: "Year") { rowValue in
+                Column("Year", id: "Year") { rowValue in
                     CellView { model in
                         Text("\(rowValue.year)")
                             .foregroundColor(model.isHighlighted ? .none : .secondary)
                     }
                 }
                 .columnSort(compare: { $0.year < $1.year })
-                .width(60)
+                .frame(width: 60, alignment: .trailing)
 
-                IDDColumn("Make", id: "Make") { rowValue in
+                Column("Make", id: "Make") { rowValue in
                     Text(rowValue.make)
                 }
                 .columnSort(compare: { $0.make < $1.make })
-                .width(80)
+                .frame(width: 80, alignment: .trailing)
 
-                IDDColumn("", id: "empty") { rowValue in
+                Column("") { rowValue in
                     Text("")
                 }
-                .width(20)
+                .frame(width: 20)
 
-                IDDColumn("Model", id: "Model") { rowValue in
+                Column("Model", id: "Model") { rowValue in
                     CellView { model in
                         Text("\(rowValue.model)")
                             .foregroundColor(model.isHighlighted ? .none : .yellow)
                     }
                 }
                 .columnSort(compare: { $0.model < $1.model })
-                .alignment(.trailing)
-                .width(min: 60, ideal: 80, max: 100)
+                .frame(minWidth: 60, ideal: 80, maxWidth: 100)
 
                 if showExtraColumn {
-                    IDDColumn("Extra", id: "Extra") { rowValue in
+                    Column("Extra", id: "Extra") { rowValue in
                         Text(rowValue.extraColumn)
                     }
                     .columnSort(compare: { $0.extraColumn < $1.extraColumn })
-                    .width(160)
+                    .frame(minWidth: 160)
                 }
 
-                IDDColumn("Category", id: "Category") { rowValue in
+                Column("Category", id: "Category") { rowValue in
                     Text(rowValue.category)
                 }
                 .columnSort(compare: { $0.category < $1.category })
-                .width(min: 180, ideal: 200, max: .infinity)
+                .frame(minWidth: 180, ideal: 200, maxWidth: .infinity)
             }
             .id(showExtraColumn ? "showExtraColumn=true" : "showExtraColumn=false")
         }

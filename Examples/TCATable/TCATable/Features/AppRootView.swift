@@ -3,7 +3,7 @@
 //  TCATable
 //
 //  Created by Klajd Deda on 12/27/21.
-//  Copyright (C) 1997-2022 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2023 id-design, inc. All rights reserved.
 //
 
 import SwiftUI
@@ -60,21 +60,21 @@ struct AppRootView: View {
                     multipleSelection: viewStore.binding(\.$selectedFiles),
                     columnSorts: viewStore.binding(\.$columnSorts)
                 ) {
-                    IDDColumn("File Size in Bytes", id: "File Size in Bytes") { rowValue in
+                    Column("File Size in Bytes", id: "File Size in Bytes") { rowValue in
                         Text(rowValue.physicalSize.decimalFormatted)
                             .font(.subheadline)
                     }
                     .frame(width: 130, alignment: .trailing)
                     .columnSort(compare: { $0.physicalSize < $1.physicalSize })
 
-                    IDDColumn("On Disk", id: "On Disk") { rowValue in
+                    Column("On Disk", id: "On Disk") { rowValue in
                         Text(rowValue.logicalSize.compactFormatted)
                             .font(.subheadline)
                     }
                     .frame(width: 70, alignment: .trailing)
                     .columnSort(compare: { $0.logicalSize < $1.logicalSize })
 
-                    IDDColumn("") { rowValue in
+                    Column("") { rowValue in
                         CellView { model in
                             Image(systemName: "magnifyingglass.circle.fill")
                                 .renderingMode(.template)
@@ -91,7 +91,7 @@ struct AppRootView: View {
                     }
                     .frame(width: 24, alignment: .center)
 
-                    IDDColumn("Last Modified", id: "Last Modified") { rowValue in
+                    Column("Last Modified", id: "Last Modified") { rowValue in
                         Text(File.lastModified.string(from: rowValue.modificationDate))
                             .lineLimit(1)
                             .font(.subheadline)
@@ -99,8 +99,8 @@ struct AppRootView: View {
                     .frame(width: 160)
                     .columnSort(compare: { $0.modificationDate < $1.modificationDate })
 
-                    IDDColumn("File Name", id: "File Name") { rowValue in
-                        Text("\(String(format: "[%04d] - [%@]", rowValue.id, rowValue.fileName))")
+                    Column("File Name", id: "File Name") { rowValue in
+                        Text("\(String(format: "%04d - %@", rowValue.id, rowValue.fileName))")
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .font(.subheadline)
@@ -108,7 +108,7 @@ struct AppRootView: View {
                     .frame(minWidth: 140, ideal: 200, maxWidth: 280)
                     .columnSort(compare: { $0.fileName < $1.fileName })
 
-                    IDDColumn("File Path", id: "File Path") { rowValue in
+                    Column("File Path", id: "File Path") { rowValue in
                         HStack {
                             Image(nsImage: rowValue.icon)
                                 .resizable()

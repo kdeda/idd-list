@@ -1,5 +1,5 @@
 //
-//  IDDColumn.swift
+//  Column.swift
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
@@ -10,7 +10,7 @@ import AppKit
 import SwiftUI
 import Log4swift
 
-public struct IDDColumn<RowValue>
+public struct Column<RowValue>
     where RowValue: Identifiable, RowValue: Equatable
 {
     enum WidthType {
@@ -66,7 +66,7 @@ public struct IDDColumn<RowValue>
 
 // MARK: - View Modifiers -
 
-extension IDDColumn {
+extension Column {
     /// A generic introspection block that allows direct access to the table column object.
     public func introspect(
         _ block: @escaping IntrospectBlock
@@ -129,7 +129,7 @@ extension NSSortDescriptor {
  https://forums.swift.org/t/extension-on-array-where-element-is-generic-type/10225/3
  */
 extension Array {
-    func updateColumnSorts<RowValue>(_ columnSorts: [ColumnSort<RowValue>]) -> [IDDColumn<RowValue>] {
+    func updateColumnSorts<RowValue>(_ columnSorts: [ColumnSort<RowValue>]) -> Array where Element == Column<RowValue> {
         /**
          Preserve the state of the column sort. The user has just given us the columnSorts which is
          the truth. Each corresponding column sort should reflect that state.
@@ -137,8 +137,7 @@ extension Array {
          Later on as the columns are sorted up or down, the values will be pushed back into the columnSorts binding and kept in sync.
          */
         let update = self
-            .compactMap { $0 as? IDDColumn<RowValue> } // convert to honest array of IDDColumn
-            .map { column -> IDDColumn<RowValue> in
+            .map { column in
                 var copy = column
                 // make sure a given column's initial sort matches the one that came from the state
                 // this way you can have a column sort, pre selected upon load
@@ -148,7 +147,23 @@ extension Array {
                 }
                 return copy
             }
-        
         return update
     }
+
+//    func updateColumnSorts<RowValue>(_ columnSorts: [ColumnSort<RowValue>]) -> [IDDColumn<RowValue>] {
+//        let update = self
+//            .compactMap { $0 as? IDDColumn<RowValue> } // convert to honest array of IDDColumn
+//            .map { column -> IDDColumn<RowValue> in
+//                var copy = column
+//                // make sure a given column's initial sort matches the one that came from the state
+//                // this way you can have a column sort, pre selected upon load
+//                //
+//                if let truth = columnSorts.first(where: { $0.columnID == column.columnSort.columnID }) {
+//                    copy.columnSort.ascending = truth.ascending
+//                }
+//                return copy
+//            }
+//
+//        return update
+//    }
 }
