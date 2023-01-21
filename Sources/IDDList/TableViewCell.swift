@@ -20,6 +20,7 @@ public final class TableViewCell: NSTableCellView {
 
         addSubview(hostingView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
+        // hostingView.layer?.backgroundColor = NSColor.yellow.cgColor
         NSLayoutConstraint.activate([
             hostingView.leadingAnchor.constraint(equalTo: leadingAnchor),
             hostingView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -45,17 +46,22 @@ public final class TableViewCell: NSTableCellView {
         }
         set {
             super.backgroundStyle = newValue
+
+            let isHighlighted = newValue == .emphasized
+            if self.cellModel.isHighlighted != isHighlighted {
+                Log4swift[Self.self].info("backgroundStyle: '\(cellModel.objectID)' isHighlighted: '\(isHighlighted)'")
+                self.cellModel.isHighlighted = isHighlighted
+            }
             // if newValue == .emphasized {
             //     Log4swift[Self.self].info("backgroundStyle: '\(cellModel.objectID)'")
             // }
-            self.cellModel.isHighlighted = newValue == .emphasized
         }
     }
 
     static func makeView(in tableView: NSTableView) -> Self {
         let id = NSUserInterfaceItemIdentifier(rawValue: String(describing: Self.self))
         if let view = tableView.makeView(withIdentifier: id, owner: nil) as? Self {
-          return view
+            return view
         }
         let view = Self()
         view.identifier = id

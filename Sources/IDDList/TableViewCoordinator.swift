@@ -84,7 +84,7 @@ public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate
     // MARK: - NSTableViewDataSource -
 
     public func numberOfRows(in tableView: NSTableView) -> Int {
-        Log4swift[Self.self].info("numberOfRows: '\(rows.count)'")
+        // Log4swift[Self.self].info("numberOfRows: '\(rows.count)'")
         return rows.count
     }
 

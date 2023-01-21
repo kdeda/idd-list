@@ -180,7 +180,16 @@ public struct IDDList<RowValue>: NSViewRepresentable
 
             Log4swift[Self.self].info("detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
+        } else {
+            let visibleRows = tableView.rows(in: tableView.visibleRect)
+
+//            let updatedRowIndexes = tableRows.compactMap(updatedRows.firstIndex(of:))
+
+            let updatedRowIndexes = (visibleRows.location ..< visibleRows.length).map { $0 }
+            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0..<tableView.tableColumns.count))
+            // tableView.display()
         }
+        // tableView.reloadData()
 
         // update column visibility
         tableView.tableColumns.forEach { tableColumn in
