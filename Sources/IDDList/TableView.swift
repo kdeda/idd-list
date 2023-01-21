@@ -35,6 +35,7 @@ public class TableView<RowValue>: NSTableView
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.sortDescriptors = columns.compactMap(\.sortDescriptor)
+        self.rowHeight = 22.0
 
         Log4swift[Self.self].info("created: '\(self.sortDescriptors)'")
     }

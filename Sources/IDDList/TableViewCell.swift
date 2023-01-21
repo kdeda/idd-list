@@ -12,7 +12,6 @@ import Log4swift
 
 public final class TableViewCell: NSTableCellView {
     let hostingView = NSHostingView(rootView: AnyView(EmptyView()))
-    private let label = NSTextField.label()
     var cellModel = CellModel()
 
     override init(frame frameRect: NSRect) {
@@ -20,6 +19,7 @@ public final class TableViewCell: NSTableCellView {
 
         addSubview(hostingView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
+        // hostingView.layer?.backgroundColor = NSColor.yellow.cgColor
         NSLayoutConstraint.activate([
             hostingView.leadingAnchor.constraint(equalTo: leadingAnchor),
             hostingView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -28,12 +28,14 @@ public final class TableViewCell: NSTableCellView {
         ])
     }
 
-    public override func layout() {
-        super.layout()
-
-        label.sizeToFit()
-        label.frame.origin = CGPoint(x: 2, y: 2)
-    }
+    // not sure what this does ..
+    //    private let label = NSTextField.label()
+    //    public override func layout() {
+    //        super.layout()
+    //        
+    //        label.sizeToFit()
+    //        label.frame.origin = CGPoint(x: 2, y: 2)
+    //    }
 
     required init?(coder: NSCoder) {
         fatalError("Not implemented")
@@ -45,17 +47,22 @@ public final class TableViewCell: NSTableCellView {
         }
         set {
             super.backgroundStyle = newValue
+
+            let isHighlighted = newValue == .emphasized
+            if self.cellModel.isHighlighted != isHighlighted {
+                Log4swift[Self.self].info("backgroundStyle: '\(cellModel.objectID)' isHighlighted: '\(isHighlighted)'")
+                self.cellModel.isHighlighted = isHighlighted
+            }
             // if newValue == .emphasized {
             //     Log4swift[Self.self].info("backgroundStyle: '\(cellModel.objectID)'")
             // }
-            self.cellModel.isHighlighted = newValue == .emphasized
         }
     }
 
     static func makeView(in tableView: NSTableView) -> Self {
         let id = NSUserInterfaceItemIdentifier(rawValue: String(describing: Self.self))
         if let view = tableView.makeView(withIdentifier: id, owner: nil) as? Self {
-          return view
+            return view
         }
         let view = Self()
         view.identifier = id

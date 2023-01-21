@@ -129,7 +129,10 @@ extension NSSortDescriptor {
  https://forums.swift.org/t/extension-on-array-where-element-is-generic-type/10225/3
  */
 extension Array {
-    func updateColumnSorts<RowValue>(_ columnSorts: [ColumnSort<RowValue>]) -> Array where Element == Column<RowValue> {
+    func updateColumnSorts<RowValue>(
+        _ columnSorts: [ColumnSort<RowValue>]
+    ) -> Array where Element == Column<RowValue>
+    {
         /**
          Preserve the state of the column sort. The user has just given us the columnSorts which is
          the truth. Each corresponding column sort should reflect that state.
@@ -149,21 +152,4 @@ extension Array {
             }
         return update
     }
-
-//    func updateColumnSorts<RowValue>(_ columnSorts: [ColumnSort<RowValue>]) -> [IDDColumn<RowValue>] {
-//        let update = self
-//            .compactMap { $0 as? IDDColumn<RowValue> } // convert to honest array of IDDColumn
-//            .map { column -> IDDColumn<RowValue> in
-//                var copy = column
-//                // make sure a given column's initial sort matches the one that came from the state
-//                // this way you can have a column sort, pre selected upon load
-//                //
-//                if let truth = columnSorts.first(where: { $0.columnID == column.columnSort.columnID }) {
-//                    copy.columnSort.ascending = truth.ascending
-//                }
-//                return copy
-//            }
-//
-//        return update
-//    }
 }
