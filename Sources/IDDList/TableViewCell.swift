@@ -12,7 +12,6 @@ import Log4swift
 
 public final class TableViewCell: NSTableCellView {
     let hostingView = NSHostingView(rootView: AnyView(EmptyView()))
-    // private let label = NSTextField.label()
     var cellModel = CellModel()
 
     override init(frame frameRect: NSRect) {
@@ -30,9 +29,10 @@ public final class TableViewCell: NSTableCellView {
     }
 
     // not sure what this does ..
+    //    private let label = NSTextField.label()
     //    public override func layout() {
     //        super.layout()
-    //
+    //        
     //        label.sizeToFit()
     //        label.frame.origin = CGPoint(x: 2, y: 2)
     //    }
