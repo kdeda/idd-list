@@ -21,7 +21,8 @@ public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate
     where RowValue: Identifiable, RowValue: Equatable
 {
     var rows: [RowValue]
-    // this is update each time a new is created
+    // this reference is update each time a new parent is created
+    // IDDList.updateNSView
     var parent: IDDList<RowValue>
     var updateStatus: UpdateSource = .none
 

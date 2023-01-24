@@ -43,6 +43,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
     @Binding private var multipleSelection: Set<RowValue.ID>
     @Binding private var columnSorts: [ColumnSort<RowValue>]
     @State public var columns: [Column<RowValue>]
+    var id: Int = 0
 
     private var selectedRows: IndexSet {
         let indexArray: [Int] = {
@@ -146,6 +147,13 @@ public struct IDDList<RowValue>: NSViewRepresentable
         // Log4swift[Self.self].info("")
     }
 
+    public func id(_ id: Int) -> Self {
+        var copy = self
+
+        copy.id = id
+        return copy
+    }
+
     // MARK: - NSViewRepresentable overrides -
 
     /**
@@ -157,7 +165,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
 
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
-        Log4swift[Self.self].info("makeNSView")
+        Log4swift[Self.self].info("id: '\(self.id)'")
         return scrollView
     }
 
@@ -170,7 +178,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         context.coordinator.updateStatus = .fromNSView
         defer { context.coordinator.updateStatus = .none }
 
-        Log4swift[Self.self].info("detected changes ...")
+        // Log4swift[Self.self].info("detected changes ...")
 
         let tableView = nsView.tableView
         context.coordinator.parent = self
@@ -178,19 +186,15 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // let oldRows = context.coordinator.rows
             context.coordinator.rows = rows
 
-            Log4swift[Self.self].info("detected changes in the rows, reloading: '\(rows.count) rows'")
+            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
         } else {
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (visibleRows.location ..< visibleRows.length).map { $0 }
 
-            Log4swift[Self.self].info("detected changes in the rows, re-drawing: '\(updatedRowIndexes.count) visibleRows'")
+            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, re-drawing: '\(updatedRowIndexes.count) visibleRows'")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
-            if updatedRowIndexes.count == 0 {
-                Log4swift[Self.self].info("detected changes in the rows, reloading: '\(rows.count) rows'")
-            }
         }
-        // tableView.reloadData()
 
         // update column visibility
         tableView.tableColumns.forEach { tableColumn in
@@ -207,8 +211,8 @@ public struct IDDList<RowValue>: NSViewRepresentable
                   tableView.selectedRowIndexes != indices
             else { return }
 
-            Log4swift[Self.self].info("selected: '\(rows[indices.first!])'")
-            Log4swift[Self.self].info("updating selections: '\(indices.map { $0.description })'")
+            Log4swift[Self.self].info("id: '\(self.id)' selected: '\(rows[indices.first!])'")
+            Log4swift[Self.self].info("id: '\(self.id)' updating selections: '\(indices.map { $0.description })'")
 
             tableView.selectRowIndexes(indices, byExtendingSelection: false)
             if let first = indices.first {
@@ -223,7 +227,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
      Gets called once per view "identity"
      */
     public func makeCoordinator() -> TableViewCoordinator<RowValue> {
-        Log4swift[Self.self].info("makeCoordinator")
+        Log4swift[Self.self].info("id: '\(self.id)'")
         return TableViewCoordinator(self, rows: rows)
     }
 
@@ -261,7 +265,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         guard !updated.isEmpty
         else {
             // should not get here
-            Log4swift[Self.self].error("found no match from: '\(sortDescriptors)'")
+            Log4swift[Self.self].error("id: '\(self.id)' found no match from: '\(sortDescriptors)'")
             return }
 
         self.columnSorts = updated
