@@ -186,13 +186,13 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // let oldRows = context.coordinator.rows
             context.coordinator.rows = rows
 
-            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
+            // Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
         } else {
             let visibleRows = tableView.rows(in: tableView.visibleRect)
-            let updatedRowIndexes = (visibleRows.location ..< visibleRows.length).map { $0 }
+            let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
 
-            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, re-drawing: '\(updatedRowIndexes.count) visibleRows'")
+            // Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, re-drawing: '\(updatedRowIndexes.count) visibleRows'")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         }
 
