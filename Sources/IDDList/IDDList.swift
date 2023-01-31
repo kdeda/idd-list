@@ -237,9 +237,14 @@ public struct IDDList<RowValue>: NSViewRepresentable
      Convenience, Called from the Coordinator since we manage the state
      */
     func updateSelection(from indices: IndexSet) {
-        let indices = Set(indices.map { rows[$0].id })
-
-        multipleSelection = indices
+        switch selectionType {
+        case .single:
+            let indices = Set(indices.map { rows[$0].id })
+            singleSelection = indices.first
+        case .multiple:
+            let indices = Set(indices.map { rows[$0].id })
+            multipleSelection = indices
+        }
     }
 
     /**
