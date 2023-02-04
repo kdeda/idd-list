@@ -10,10 +10,19 @@ import AppKit
 import SwiftUI
 import Log4swift
 
-public struct Column<RowValue>
-    where RowValue: Identifiable, RowValue: Equatable
+public struct Column<RowValue>: Equatable
+where RowValue: Identifiable, RowValue: Equatable
 {
-    enum WidthType {
+    public static func == (lhs: Column<RowValue>, rhs: Column<RowValue>) -> Bool {
+        lhs.title == rhs.title
+        && lhs.id == rhs.id
+        && lhs.isVisible == rhs.isVisible
+        && lhs.alignment == rhs.alignment
+        && lhs.width == rhs.width
+        && lhs.columnSort == rhs.columnSort
+    }
+
+    enum WidthType: Equatable {
         case fixed(CGFloat)
         case limits(min: CGFloat?, ideal: CGFloat?, max: CGFloat?)
 

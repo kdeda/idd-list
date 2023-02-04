@@ -10,23 +10,23 @@ import AppKit
 import SwiftUI
 import Log4swift
 
-public final class IDDListModel<RowValue>: ObservableObject
-    where RowValue: Identifiable, RowValue: Equatable
-{
-    @Published private var singleSelection: RowValue.ID?
-    @Published private var multipleSelection: Set<RowValue.ID>
-    @Published private var columnSorts: [ColumnSort<RowValue>]
-
-    init(
-        singleSelection: RowValue.ID? = nil,
-        multipleSelection: Set<RowValue.ID>,
-        columnSorts: [ColumnSort<RowValue>]
-    ) {
-        self.singleSelection = singleSelection
-        self.multipleSelection = multipleSelection
-        self.columnSorts = columnSorts
-    }
-}
+//public final class IDDListModel<RowValue>: ObservableObject
+//    where RowValue: Identifiable, RowValue: Equatable
+//{
+//    @Published private var singleSelection: RowValue.ID?
+//    @Published private var multipleSelection: Set<RowValue.ID>
+//    @Published private var columnSorts: [ColumnSort<RowValue>]
+//
+//    init(
+//        singleSelection: RowValue.ID? = nil,
+//        multipleSelection: Set<RowValue.ID>,
+//        columnSorts: [ColumnSort<RowValue>]
+//    ) {
+//        self.singleSelection = singleSelection
+//        self.multipleSelection = multipleSelection
+//        self.columnSorts = columnSorts
+//    }
+//}
 
 public struct IDDList<RowValue>: NSViewRepresentable
     where RowValue: Identifiable, RowValue: Equatable
@@ -43,6 +43,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
     @Binding private var multipleSelection: Set<RowValue.ID>
     @Binding private var columnSorts: [ColumnSort<RowValue>]
     @State public var columns: [Column<RowValue>]
+    @State private var tableFrame: CGRect = .zero
     var id: Int = 0
 
     private var selectedRows: IndexSet {
@@ -186,14 +187,27 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // let oldRows = context.coordinator.rows
             context.coordinator.rows = rows
 
-            // Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
+            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
         } else {
+            let startDate = Date()
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
+            guard !updatedRowIndexes.isEmpty,
+                  tableFrame != tableView.frame
+            else { return }
 
-            // Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, re-drawing: '\(updatedRowIndexes.count) visibleRows'")
-            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
+            let selectedRowIndexes = tableView.selectedRowIndexes
+            tableView.reloadData()
+            tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
+
+//            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, re-drawing: '\(updatedRowIndexes.count) visibleRows'")
+//            Log4swift[Self.self].info("id: '\(self.id)' frame changed: '\(tableFrame)' '\(tableView.frame)'")
+//            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
+            DispatchQueue.main.async {
+                self.tableFrame = tableView.frame
+            }
+            Log4swift[Self.self].info("id: '\(self.id)' updated in: '\(String(format: "%.3f", -startDate.timeIntervalSinceNow * 1000.0)) ms'")
         }
 
         // update column visibility
