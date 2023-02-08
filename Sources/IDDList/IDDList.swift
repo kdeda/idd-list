@@ -171,6 +171,40 @@ public struct IDDList<RowValue>: NSViewRepresentable
     }
 
     /**
+     Return true if the selection in our view does not match the selection binding.
+     */
+    private func selectionHasChanged(_ tableView: TableView<RowValue>) -> Bool {
+        let selectedRowIndexes = tableView.selectedRowIndexes
+
+        switch selectionType {
+        case .single:
+            let existing = selectedRowIndexes.map { rows[$0].id }.first
+            return singleSelection != existing
+        case .multiple:
+            let existing = Set(selectedRowIndexes.map { rows[$0].id })
+            return multipleSelection != existing
+        }
+    }
+
+    /**
+     Return the rows we shall select, derived from the selection binding.
+     */
+    private func selectedIndexes() -> IndexSet {
+        switch selectionType {
+        case .single:
+            if let existing = rows.firstIndex(where: { $0.id == singleSelection}) {
+                return IndexSet([existing])
+            }
+            return IndexSet()
+        case .multiple:
+            let rows = rows.enumerated()
+                .filter { multipleSelection.contains($0.element.id) }
+                .map(\.offset)
+            return IndexSet(rows)
+        }
+    }
+
+    /**
      Gets called whenever `model` changes. So probably frequently
      */
     public func updateNSView(_ nsView: TableScrollView<RowValue>, context: Context) {
@@ -180,34 +214,50 @@ public struct IDDList<RowValue>: NSViewRepresentable
         defer { context.coordinator.updateStatus = .none }
 
         // Log4swift[Self.self].info("detected changes ...")
-
         let tableView = nsView.tableView
         context.coordinator.parent = self
         if context.coordinator.rows != rows {
-            // let oldRows = context.coordinator.rows
+            // the rows have changed we shall reload it all
             context.coordinator.rows = rows
 
             Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
-        } else {
-            let startDate = Date()
+
+            // preserve selection
+            let selectedRowIndexes = selectedIndexes()
+            tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
+        } else if selectionHasChanged(tableView) {
+            // the binding and the ui do not agree on the selection
+            // the binding shall to drive the ui
+            let selectedRowIndexes = selectedIndexes()
+            
+            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
+            tableView.reloadData(forRowIndexes: selectedRowIndexes, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
+            tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
+        } else if tableFrame.size.width != tableView.frame.size.width {
+            // the view was resized, reload visible rows and remember the new size
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
-            guard !updatedRowIndexes.isEmpty,
-                  tableFrame != tableView.frame
-            else { return }
 
-            let selectedRowIndexes = tableView.selectedRowIndexes
-            tableView.reloadData()
-            tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
+            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the tableView width, saved.tableFrame: '\(tableFrame)' current.tableFrame: '\(tableView.frame)'")
+            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
 
-//            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, re-drawing: '\(updatedRowIndexes.count) visibleRows'")
-//            Log4swift[Self.self].info("id: '\(self.id)' frame changed: '\(tableFrame)' '\(tableView.frame)'")
-//            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
             DispatchQueue.main.async {
+                // have to in order to avoid SwiftUI recursive complaint
                 self.tableFrame = tableView.frame
             }
-            Log4swift[Self.self].info("id: '\(self.id)' updated in: '\(String(format: "%.3f", -startDate.timeIntervalSinceNow * 1000.0)) ms'")
+        } else {
+            // catch all, something changed, this is light weight anyhow
+            let visibleRows = tableView.rows(in: tableView.visibleRect)
+            let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
+
+            // Log4swift[Self.self].info("id: '\(self.id)' detected changes in general ...")
+            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
+
+            DispatchQueue.main.async {
+                // have to in order to avoid SwiftUI recursive complaint
+                self.tableFrame = tableView.frame
+            }
         }
 
         // update column visibility
@@ -216,22 +266,6 @@ public struct IDDList<RowValue>: NSViewRepresentable
             else { return }
 
             tableColumn.isHidden = !columns[foundIdx].isVisible
-        }
-
-        // preserve reservation from state
-        DispatchQueue.main.async {
-            let indices = selectedRows
-            guard !indices.isEmpty,
-                  tableView.selectedRowIndexes != indices
-            else { return }
-
-            Log4swift[Self.self].info("id: '\(self.id)' selected: '\(rows[indices.first!])'")
-            Log4swift[Self.self].info("id: '\(self.id)' updating selections: '\(indices.map { $0.description })'")
-
-            tableView.selectRowIndexes(indices, byExtendingSelection: false)
-            if let first = indices.first {
-                tableView.scrollRowToVisible(first)
-            }
         }
     }
     
