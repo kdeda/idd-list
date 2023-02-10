@@ -30,14 +30,14 @@ public class TableView<RowValue>: NSTableView
             self.sizeLastColumnToFit()
 
             last = self.tableColumns[0]
-            Log4swift[Self.self].info("width: '\(last.width)'")
+            Log4swift[Self.self].debug("width: '\(last.width)'")
         }
 
         self.translatesAutoresizingMaskIntoConstraints = false
         self.sortDescriptors = columns.compactMap(\.sortDescriptor)
         self.rowHeight = 22.0
 
-        Log4swift[Self.self].info("created: '\(self.sortDescriptors)'")
+        Log4swift[Self.self].debug("created: '\(self.sortDescriptors)'")
     }
 
     required init?(coder: NSCoder) {

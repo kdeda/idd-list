@@ -239,13 +239,8 @@ public struct IDDList<RowValue>: NSViewRepresentable
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
 
-            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the tableView width, saved.tableFrame: '\(tableFrame)' current.tableFrame: '\(tableView.frame)'")
+            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
-
-            DispatchQueue.main.async {
-                // have to in order to avoid SwiftUI recursive complaint
-                self.tableFrame = tableView.frame
-            }
         } else {
             // catch all, something changed, this is light weight anyhow
             let visibleRows = tableView.rows(in: tableView.visibleRect)
@@ -253,11 +248,6 @@ public struct IDDList<RowValue>: NSViewRepresentable
 
             // Log4swift[Self.self].info("id: '\(self.id)' detected changes in general ...")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
-
-            DispatchQueue.main.async {
-                // have to in order to avoid SwiftUI recursive complaint
-                self.tableFrame = tableView.frame
-            }
         }
 
         // update column visibility
@@ -266,6 +256,14 @@ public struct IDDList<RowValue>: NSViewRepresentable
             else { return }
 
             tableColumn.isHidden = !columns[foundIdx].isVisible
+        }
+
+        DispatchQueue.main.async {
+            // have to in order to avoid SwiftUI recursive complaint
+            if self.tableFrame.size.width != tableView.frame.size.width {
+                self.tableFrame = tableView.frame
+                Log4swift[Self.self].debug("id: '\(self.id)' saved: '\(tableFrame)'")
+            }
         }
     }
     
