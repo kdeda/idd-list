@@ -15,7 +15,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/kdeda/idd-log4-swift.git", from: "1.2.3")
+        .package(url: "https://github.com/kdeda/idd-log4-swift-v2.git", from: "2.0.4")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -23,14 +23,14 @@ let package = Package(
         .target(
             name: "IDDList",
             dependencies: [
-                .product(name: "Log4swift", package: "idd-log4-swift")
+                .product(name: "Log4swift", package: "idd-log4-swift-v2")
             ]
         ),
         .testTarget(
             name: "IDDListTests",
             dependencies: [
                 "IDDList",
-                .product(name: "Log4swift", package: "idd-log4-swift")
+                .product(name: "Log4swift", package: "idd-log4-swift-v2")
             ]
         )
     ]
