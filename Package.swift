@@ -1,4 +1,4 @@
-// swift-tools-version:5.5
+// swift-tools-version:5.7
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -15,22 +15,20 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/kdeda/idd-log4-swift-v2.git", from: "2.0.4")
+        .package(url: "https://github.com/kdeda/idd-log4-swift.git", "2.0.1" ..< "3.0.0"),
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "IDDList",
             dependencies: [
-                .product(name: "Log4swift", package: "idd-log4-swift-v2")
+                .product(name: "Log4swift", package: "idd-log4-swift")
             ]
         ),
         .testTarget(
             name: "IDDListTests",
             dependencies: [
                 "IDDList",
-                .product(name: "Log4swift", package: "idd-log4-swift-v2")
+                .product(name: "Log4swift", package: "idd-log4-swift")
             ]
         )
     ]
