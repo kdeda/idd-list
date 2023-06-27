@@ -70,6 +70,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         rv.allowsMultipleSelection = selectionType == .multiple
         // data source
         rv.axes = scrollAxes
+        rv.sortDescriptors = columnSorts.compactMap(NSSortDescriptor.init)
         return rv
     }
 
@@ -166,6 +167,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
 
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
+
         Log4swift[Self.self].info("id: '\(self.id)'")
         return scrollView
     }
