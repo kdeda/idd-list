@@ -222,7 +222,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // the rows have changed we shall reload it all
             context.coordinator.rows = rows
 
-            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
+            Log4swift[Self.self].debug("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
 
             // preserve selection
@@ -233,7 +233,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // the binding shall to drive the ui
             let selectedRowIndexes = selectedIndexes()
             
-            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
+            Log4swift[Self.self].debug("id: '\(self.id)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
             tableView.reloadData(forRowIndexes: selectedRowIndexes, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
             tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
         } else if tableFrame.size.width != tableView.frame.size.width {
@@ -241,7 +241,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
 
-            Log4swift[Self.self].info("id: '\(self.id)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
+            Log4swift[Self.self].debug("id: '\(self.id)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         } else {
             // catch all, something changed, this is light weight anyhow
