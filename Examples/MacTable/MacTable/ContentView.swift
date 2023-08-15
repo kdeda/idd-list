@@ -19,6 +19,7 @@ struct ContentView: View {
         .init(compare: { $0.year < $1.year }, ascending: true, columnID: "Year")
     ]
     @State var showExtraColumn = false
+    @State var categoryColumnTitle = "Category"
     
     fileprivate func selectionString() -> String {
         switch selection {
@@ -50,6 +51,7 @@ struct ContentView: View {
             VStack {
                 Button(action: {
                     showExtraColumn.toggle()
+                    categoryColumnTitle = showExtraColumn ? "CategoryExtra" : "Category"
                 }) {
                     Text(showExtraColumn ? "Hide The Extra Column" : "Show The Extra Column")
                         .fontWeight(.semibold)
@@ -120,10 +122,10 @@ struct ContentView: View {
                         Text(rowValue.extraColumn)
                     }
                     .columnSort(compare: { $0.extraColumn < $1.extraColumn })
-                    .frame(minWidth: 160)
+                    .frame(minWidth: 180, ideal: 180, maxWidth: 280)
                 }
 
-                Column("Category", id: "Category") { rowValue in
+                Column(categoryColumnTitle, id: "Category") { rowValue in
                     Text(rowValue.category)
                 }
                 .columnSort(compare: { $0.category < $1.category })

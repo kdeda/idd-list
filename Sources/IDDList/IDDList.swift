@@ -44,7 +44,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
     @Binding private var columnSorts: [ColumnSort<RowValue>]
     @State public var columns: [Column<RowValue>]
     @State private var tableFrame: CGRect = .zero
-    var id: Int = 0
+    var tag: String = ""
 
     private var selectedRows: IndexSet {
         let indexArray: [Int] = {
@@ -149,10 +149,10 @@ public struct IDDList<RowValue>: NSViewRepresentable
         // Log4swift[Self.self].info("")
     }
 
-    public func id(_ id: Int) -> Self {
+    public func tag(_ tag: String) -> Self {
         var copy = self
 
-        copy.id = id
+        copy.tag = tag
         return copy
     }
 
@@ -168,7 +168,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
 
-        Log4swift[Self.self].info("id: '\(self.id)'")
+        Log4swift[Self.self].info("tag: '\(self.tag)'")
         return scrollView
     }
 
@@ -222,7 +222,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // the rows have changed we shall reload it all
             context.coordinator.rows = rows
 
-            Log4swift[Self.self].debug("id: '\(self.id)' detected changes in the rows, reloading: '\(rows.count) rows'")
+            Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the rows, reloading: '\(rows.count) rows'")
             tableView.reloadData()
 
             // preserve selection
@@ -233,7 +233,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // the binding shall to drive the ui
             let selectedRowIndexes = selectedIndexes()
             
-            Log4swift[Self.self].debug("id: '\(self.id)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
+            Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
             tableView.reloadData(forRowIndexes: selectedRowIndexes, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
             tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
         } else if tableFrame.size.width != tableView.frame.size.width {
@@ -241,14 +241,14 @@ public struct IDDList<RowValue>: NSViewRepresentable
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
 
-            Log4swift[Self.self].debug("id: '\(self.id)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
+            Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         } else {
             // catch all, something changed, this is light weight anyhow
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
 
-            // Log4swift[Self.self].info("id: '\(self.id)' detected changes in general ...")
+            // Log4swift[Self.self].info("tag: '\(self.tag)' detected changes in general ...")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         }
 
@@ -264,7 +264,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
             // have to in order to avoid SwiftUI recursive complaint
             if self.tableFrame.size.width != tableView.frame.size.width {
                 self.tableFrame = tableView.frame
-                Log4swift[Self.self].debug("id: '\(self.id)' saved: '\(tableFrame)'")
+                Log4swift[Self.self].debug("tag: '\(self.tag)' saved: '\(tableFrame)'")
             }
         }
     }
@@ -275,7 +275,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
      Gets called once per view "identity"
      */
     public func makeCoordinator() -> TableViewCoordinator<RowValue> {
-        Log4swift[Self.self].info("id: '\(self.id)'")
+        Log4swift[Self.self].info("tag: '\(self.tag)'")
         return TableViewCoordinator(self, rows: rows)
     }
 
@@ -318,7 +318,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         guard !updated.isEmpty
         else {
             // should not get here
-            Log4swift[Self.self].error("id: '\(self.id)' found no match from: '\(sortDescriptors)'")
+            Log4swift[Self.self].error("tag: '\(self.tag)' found no match from: '\(sortDescriptors)'")
             return }
 
         self.columnSorts = updated
