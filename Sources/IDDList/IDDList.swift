@@ -71,6 +71,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         // data source
         rv.axes = scrollAxes
         rv.sortDescriptors = columnSorts.compactMap(NSSortDescriptor.init)
+
         return rv
     }
 
@@ -167,7 +168,14 @@ public struct IDDList<RowValue>: NSViewRepresentable
 
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
+        
+        tableView.intercellSpacing = .init(width: 10, height: 1)
+        scrollView.hasHorizontalScroller = false
 
+        if let sortDescriptor = tableView.sortDescriptors.first,
+           let sortedColumn = tableView.tableColumns.first(where: { $0.sortDescriptorPrototype == sortDescriptor }) {
+            context.coordinator.tableView(tableView, mouseDownInHeaderOf: sortedColumn)
+        }
         Log4swift[Self.self].info("tag: '\(self.tag)'")
         return scrollView
     }

@@ -68,14 +68,14 @@ public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate
             frame = (minWidth: width, idealWidth: width, maxWidth: width)
         }
 
-//        Log4swift[Self.self].info("column: '\(column.title)' frame: '\(frame)'")
-//        Log4swift[Self.self].info("alignment: '\(column.alignment == .trailing ? "trailing" : "")'")
+        //        Log4swift[Self.self].info("column: '\(column.title)' frame: '\(frame)'")
+        //        Log4swift[Self.self].info("alignment: '\(column.alignment == .trailing ? "trailing" : "")'")
 
         cell.hostingView.rootView = AnyView(column
             .cellView(rows[row])
-            // .frame(width: frame.minWidth, alignment: column.alignment)
+                                            // .frame(width: frame.minWidth, alignment: column.alignment)
             .frame(minWidth: frame.minWidth, idealWidth: frame.idealWidth, maxWidth: frame.maxWidth, alignment: column.alignment)
-            // .border(Color.yellow)
+                                            // .border(Color.yellow)
             .environmentObject(cell.cellModel)
         )
         cell.hostingView.invalidateIntrinsicContentSize()
@@ -102,6 +102,32 @@ public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate
         sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]
     ) {
         parent.updateSorting(from: tableView.sortDescriptors)
+    }
+
+    public func tableView(
+        _ tableView: NSTableView,
+        mouseDownInHeaderOf tableColumn: NSTableColumn
+    ) {
+        // Log4swift[Self.self].info("tableColumn: '\(tableColumn.title)'")
+
+        tableView.tableColumns.forEach { column in
+            let existingAttrbutedString = NSMutableAttributedString(attributedString: column.headerCell.attributedStringValue)
+            let string = existingAttrbutedString.string
+
+            if tableColumn == column {
+                existingAttrbutedString.addAttribute(.foregroundColor, value: NSColor.headerTextColor, range: NSMakeRange(0, string.count))
+                let semiboldFont = NSFont.systemFont(ofSize: 11, weight: .semibold)
+
+                existingAttrbutedString.addAttribute(.font, value: semiboldFont, range: NSMakeRange(0, string.count))
+            } else {
+                existingAttrbutedString.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: NSMakeRange(0, string.count))
+                let theFont = NSFont.systemFont(ofSize: 11, weight: .regular)
+
+                existingAttrbutedString.addAttribute(.font, value: theFont, range: NSMakeRange(0, string.count))
+            }
+            column.headerCell.attributedStringValue = existingAttrbutedString
+        }
+
     }
 }
 

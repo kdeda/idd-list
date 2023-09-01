@@ -29,7 +29,7 @@ struct AppRootView: View {
     
     @ViewBuilder
     fileprivate func headerView() -> some View {
-        WithViewStore(store) { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             HStack {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("This is the TCATable demo of the TableView.")
@@ -50,15 +50,15 @@ struct AppRootView: View {
     }
 
     var body: some View {
-        WithViewStore(store) { viewStore in
+        WithViewStore(store, observe: { $0 }) { viewStore in
             VStack(spacing: 0) {
                 headerView()
                     // .border(Color.yellow)
                 Divider()
                 IDDList(
                     viewStore.files,
-                    multipleSelection: viewStore.binding(\.$selectedFiles),
-                    columnSorts: viewStore.binding(\.$columnSorts)
+                    multipleSelection: viewStore.$selectedFiles,
+                    columnSorts: viewStore.$columnSorts
                 ) {
                     Column("File Size in Bytes", id: "File Size in Bytes") { rowValue in
                         Text(rowValue.physicalSize.decimalFormatted)
@@ -91,7 +91,7 @@ struct AppRootView: View {
                     }
                     .frame(width: 24, alignment: .center)
 
-                    Column("Last Modified", id: "Last Modified") { rowValue in
+                    Column("Date Modified", id: "Date Modified") { rowValue in
                         Text(File.lastModified.string(from: rowValue.modificationDate))
                             .lineLimit(1)
                             .font(.subheadline)
@@ -124,7 +124,7 @@ struct AppRootView: View {
                     .columnSort(compare: { $0.filePath < $1.filePath })
                 }
                 .introspect { tableView, scrollView in
-                    tableView.intercellSpacing = .init(width: 2, height: 1)
+                    tableView.intercellSpacing = .init(width: 10, height: 1)
                     scrollView.hasHorizontalScroller = false
                     //  scrollView.scrollerInsets = .init(top: 0.0, left: 0.0, bottom: 14.0, right: 0.0)
                     // // scrollView.hasVerticalScroller = false
@@ -152,7 +152,7 @@ struct AppRootView_Previews: PreviewProvider {
     static var previews: some View {
         AppRootView(store: Store(
             initialState: AppRoot.State.mock,
-            reducer: AppRoot()
+            reducer: AppRoot.init
         ))
         .frame(width: 840)
         .frame(height: 640)
@@ -161,7 +161,7 @@ struct AppRootView_Previews: PreviewProvider {
         
         AppRootView(store: Store(
             initialState: AppRoot.State.mock,
-            reducer: AppRoot()
+            reducer: AppRoot.init
         ))
         .background(Color(NSColor.windowBackgroundColor))
         .environment(\.colorScheme, .dark)

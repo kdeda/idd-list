@@ -13,15 +13,15 @@ import Log4swift
 import IDDList
 import SwiftUI
 
-struct AppRoot: ReducerProtocol {
+struct AppRoot: Reducer {
     /// This is the state for the TableView
     struct State: Equatable, Identifiable {
         var id = UUID()
         var isAppReady = false
         var files: [File] = []
-        @BindableState var selectedFiles: Set<File.ID> = []
-        @BindableState var columnSorts: [ColumnSort<File>] = [
-            .init(compare: { $0.physicalSize < $1.physicalSize }, ascending: true, columnID: "Year")
+        @BindingState var selectedFiles: Set<File.ID> = []
+        @BindingState var columnSorts: [ColumnSort<File>] = [
+            .init(compare: { $0.physicalSize < $1.physicalSize }, ascending: true, columnID: "File Size in Bytes")
         ]
     }
 
@@ -38,7 +38,7 @@ struct AppRoot: ReducerProtocol {
     init() {
     }
 
-    var body: some ReducerProtocol<State, Action> {
+    var body: some Reducer<State, Action> {
         BindingReducer()
 
         Reduce { state, action in
@@ -48,11 +48,11 @@ struct AppRoot: ReducerProtocol {
             case .binding(\.$selectedFiles):
                 Log4swift[Self.self].info("selectedFiles: '\(state.selectedFiles.count)'")
 //                let files = state.files.filter { state.selectedFiles.contains($0.id) }
-//                return Effect(value: .selectedFilesDidChange(files))
+//                return .send(.selectedFilesDidChange(files))
                 return .none
 
             case .binding(\.$columnSorts):
-                return Effect(value: .sortFiles(state.columnSorts[0]))
+                return .send(.sortFiles(state.columnSorts[0]))
 
             case .binding:
                 return .none
@@ -60,10 +60,10 @@ struct AppRoot: ReducerProtocol {
             case .appDidStart where !state.isAppReady:
                 state.isAppReady = true
 
-                return .task {
-                    .setFiles(
+                return .run { send in
+                    await send(.setFiles(
                         await fileClient.fetchFiles(URL(fileURLWithPath: NSHomeDirectory()))
-                    )
+                    ))
                 }
 
             case .appDidStart:
@@ -77,7 +77,7 @@ struct AppRoot: ReducerProtocol {
 
                 // preserve selection
                 state.selectedFiles = Set(newSelection.map(\.id))
-                return Effect(value: .sortFiles(state.columnSorts[0]))
+                return .send(.sortFiles(state.columnSorts[0]))
 
             case let .selectedFilesDidChange(newValue):
                 state.selectedFiles = Set(newValue.map(\.id))

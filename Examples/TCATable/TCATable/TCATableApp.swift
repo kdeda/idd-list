@@ -20,7 +20,7 @@ struct TCATableApp: App {
         
         self.store = Store(
             initialState: AppRoot.State(),
-            reducer: AppRoot()
+            reducer: AppRoot.init
         )
     }
     
