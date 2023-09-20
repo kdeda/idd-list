@@ -17,6 +17,7 @@ public struct FileClient {
      This will work because we removed entitlements from this app
      */
     let fetchFiles: (_ url: URL) async -> [File]
+    let loadAnotherBatch: (_ url: URL, _ batchID: Int) async -> [File]
 }
 
 extension DependencyValues {
@@ -27,33 +28,37 @@ extension DependencyValues {
 }
 
 extension FileClient: DependencyKey {
-    public static let liveValue = Self(
-        fetchFiles: { url in
+    public static let liveValue: Self = {
+        func fetchFiles(url: URL, batchID: Int, batchSize: Int) -> [File] {
             let files = url
                 .contentsOfDirectory
                 .enumerated()
-                .map { File.init(id: $0.offset, fileURL: $0.element) }
+                .map { File.init(fileURL: $0.element) }
 
-            let fileCount = files.count
-            let desiredFinalCount = 100_000 // this is how much we want to end up with
-            // as we increase this number things start to lag ...
-            let multiplier = 10 //  + desiredFinalCount / fileCount
+            let rv = batchID == 0 ? files : Array(files.prefix(min(files.count, batchSize)))
 
-            // multiply the initial array by x to generate more value for performance testing
-            let rv = (0 ..< multiplier).reduce(into: [File]()) { partialResult, nextItem in
-                let newValues: [File] = files.map { file in
-                    var newCopy = file
-                    if nextItem > 0 {
-                        newCopy.id = partialResult.count + file.id
-                        newCopy.logicalSize += newCopy.logicalSize * Int64(nextItem)
-                        newCopy.physicalSize += newCopy.physicalSize * Int64(nextItem)
-                    }
-                    return newCopy
+            let newValues: [File] = rv.map { file in
+                var newCopy = file
+
+                if batchSize != 0 {
+                    newCopy.batchID = batchID
+                    newCopy.logicalSize += newCopy.logicalSize * Int64.random(in: newCopy.logicalSize ... newCopy.logicalSize * 10)
+                    newCopy.physicalSize += newCopy.physicalSize * Int64.random(in: newCopy.logicalSize ... newCopy.logicalSize * 10)
                 }
-                partialResult.append(contentsOf: newValues)
+                return newCopy
             }
-            return rv
+
+            return newValues
         }
-    )
+
+        return Self(
+            fetchFiles: { url in
+                return fetchFiles(url: url, batchID: 0, batchSize: 0)
+            },
+            loadAnotherBatch: { url, batchID in
+                return fetchFiles(url: url, batchID: batchID, batchSize: Int.random(in: 5 ... 50))
+            }
+        )
+    }()
 }
 

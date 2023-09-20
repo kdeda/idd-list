@@ -44,6 +44,24 @@ struct AppRootView: View {
                         .font(.subheadline)
                 }
                 Spacer()
+                VStack {
+                    HStack() {
+                        Button(action: {
+                            viewStore.send(.loadAnotherBatch)
+                        }) {
+                            Text("Load More Files")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    HStack() {
+                        Button(action: {
+                            viewStore.send(.removeSelection)
+                        }) {
+                            Text("Remove Selection")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                }
             }
             .padding(.all, 18)
         }
@@ -100,7 +118,7 @@ struct AppRootView: View {
                     .columnSort(compare: { $0.modificationDate < $1.modificationDate })
 
                     Column("File Name", id: "File Name") { rowValue in
-                        Text("\(String(format: "%04d - %@", rowValue.id, rowValue.fileName))")
+                        Text("\(String(format: "%02d - %@", rowValue.batchID, rowValue.fileName))")
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .font(.subheadline)

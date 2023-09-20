@@ -19,7 +19,10 @@ struct File: Equatable, Identifiable {
         return rv
     }()
 
-    var id: Int
+    var id = UUID()
+    // we use this to emulate more rows
+    // so the cloned id = original.id + files.count * batchCount
+    var batchID: Int
 
     // this is derived and so it does not participate in the copy process
     // this allows sorting to be a tad bit faster
@@ -34,9 +37,7 @@ struct File: Equatable, Identifiable {
     let fileName: String
     var filePath: String
 
-    init(id: Int, fileURL: URL) {
-        self.id = id
-
+    init(fileURL: URL) {
         // self.fileURL = fileURL
         // TODO: figure a better way to display relative paths ...
         self.relativePath = fileURL.path
@@ -45,6 +46,7 @@ struct File: Equatable, Identifiable {
         self.modificationDate = fileURL.contentModificationDate
         self.fileName = fileURL.lastPathComponent
         self.filePath = fileURL.path
+        self.batchID = 0
     }
     
     var icon: NSImage {

@@ -8,28 +8,11 @@
 
 import AppKit
 import SwiftUI
+import IDDSwift
 import Log4swift
 
-//public final class IDDListModel<RowValue>: ObservableObject
-//    where RowValue: Identifiable, RowValue: Equatable
-//{
-//    @Published private var singleSelection: RowValue.ID?
-//    @Published private var multipleSelection: Set<RowValue.ID>
-//    @Published private var columnSorts: [ColumnSort<RowValue>]
-//
-//    init(
-//        singleSelection: RowValue.ID? = nil,
-//        multipleSelection: Set<RowValue.ID>,
-//        columnSorts: [ColumnSort<RowValue>]
-//    ) {
-//        self.singleSelection = singleSelection
-//        self.multipleSelection = multipleSelection
-//        self.columnSorts = columnSorts
-//    }
-//}
-
 public struct IDDList<RowValue>: NSViewRepresentable
-    where RowValue: Identifiable, RowValue: Equatable
+where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 {
     enum SelectionType {
         case single
@@ -41,7 +24,11 @@ public struct IDDList<RowValue>: NSViewRepresentable
     private var selectionType: SelectionType
     @Binding private var singleSelection: RowValue.ID?
     @Binding private var multipleSelection: Set<RowValue.ID>
-    @Binding private var columnSorts: [ColumnSort<RowValue>]
+
+    /**
+     We can sort by one column at a time
+     */
+    @Binding private var columnSort: ColumnSort<RowValue>
     @State public var columns: [Column<RowValue>]
     @State private var tableFrame: CGRect = .zero
     var tag: String = ""
@@ -70,7 +57,7 @@ public struct IDDList<RowValue>: NSViewRepresentable
         rv.allowsMultipleSelection = selectionType == .multiple
         // data source
         rv.axes = scrollAxes
-        rv.sortDescriptors = columnSorts.compactMap(NSSortDescriptor.init)
+        rv.sortDescriptors = [columnSort].compactMap(NSSortDescriptor.init)
 
         return rv
     }
@@ -114,16 +101,16 @@ public struct IDDList<RowValue>: NSViewRepresentable
     public init(
         _ rows: [RowValue],
         singleSelection: Binding<RowValue.ID?>,
-        columnSorts: Binding<[ColumnSort<RowValue>]> = .constant([]),
+        columnSort: Binding<ColumnSort<RowValue>> = .constant(.init()),
         @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
         self.rows = rows
         self.selectionType = .single
         self._singleSelection = singleSelection
         self._multipleSelection = .constant(Set())
-        self._columnSorts = columnSorts
+        self._columnSort = columnSort
 
-        let updatedColumns = columns().updateColumnSorts(columnSorts.wrappedValue)
+        let updatedColumns = columns().updateColumnSorts(columnSort)
         self._columns = State(initialValue: updatedColumns)
 
         // Log4swift[Self.self].info("")
@@ -135,16 +122,16 @@ public struct IDDList<RowValue>: NSViewRepresentable
     public init(
         _ rows: [RowValue],
         multipleSelection: Binding<Set<RowValue.ID>>,
-        columnSorts: Binding<[ColumnSort<RowValue>]> = .constant([]),
+        columnSort: Binding<ColumnSort<RowValue>> = .constant(.init()),
         @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
         self.rows = rows
         self.selectionType = .multiple
         self._singleSelection = .constant(.none)
         self._multipleSelection = multipleSelection
-        self._columnSorts = columnSorts
+        self._columnSort = columnSort
 
-        let updatedColumns = columns().updateColumnSorts(columnSorts.wrappedValue)
+        let updatedColumns = columns().updateColumnSorts(columnSort)
         self._columns = State(initialValue: updatedColumns)
 
         // Log4swift[Self.self].info("")
@@ -168,7 +155,6 @@ public struct IDDList<RowValue>: NSViewRepresentable
 
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
-        
         tableView.intercellSpacing = .init(width: 10, height: 1)
         scrollView.hasHorizontalScroller = false
 
@@ -227,11 +213,53 @@ public struct IDDList<RowValue>: NSViewRepresentable
         let tableView = nsView.tableView
         context.coordinator.parent = self
         if context.coordinator.rows != rows {
-            // the rows have changed we shall reload it all
-            context.coordinator.rows = rows
+            let bigO = context.coordinator.rows.count * rows.count
+            let MAX_BIG_O = 100_000
 
-            Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the rows, reloading: '\(rows.count) rows'")
-            tableView.reloadData()
+            /**
+             this is n * m complexity
+             so it will not be called for anything larger than MAX_BIG_O
+            */
+            func reloadDataWithAnimations() {
+                let startDate = Date()
+                let updates = rows.difference(from: context.coordinator.rows)
+                Log4swift[Self.self].info("found: '\(updates.count) updates' from rows: '\(rows.count)' in: '\(startDate.elapsedTimeInMilliseconds.with3Digits) ms'")
+
+                // the rows have changed we shall reload it all
+                context.coordinator.rows = rows
+                guard updates.insertions.count != updates.removals.count
+                else {
+                    // it means all has changed, avoid flicker and direct reload
+                    tableView.reloadData()
+                    return
+                }
+                Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the rows, reloading: '\(rows.count) rows'")
+                tableView.beginUpdates()
+                for step in updates.steps {
+                    switch step {
+                    case let .remove(element, index):
+                        Log4swift[Self.self].debug("remove: '\(element)'")
+                        tableView.removeRows(at: [index], withAnimation: .effectFade)
+
+                    case let .insert(element, index):
+                        Log4swift[Self.self].debug("insert: '\(element)'")
+                        tableView.insertRows(at: [index], withAnimation: .effectFade)
+
+                    case let .move(element, from, to):
+                        Log4swift[Self.self].debug("move: '\(element)'")
+                        tableView.moveRow(at: from, to: to)
+                    }
+                }
+                tableView.endUpdates()
+                tableView.invalidateIntrinsicContentSize()
+            }
+
+            if bigO > MAX_BIG_O {
+                context.coordinator.rows = rows
+                tableView.reloadData()
+            } else {
+                reloadDataWithAnimations()
+            }
 
             // preserve selection
             let selectedRowIndexes = selectedIndexes()
@@ -323,13 +351,13 @@ public struct IDDList<RowValue>: NSViewRepresentable
                 return nil
             }
 
-        guard !updated.isEmpty
+        guard let first = updated.first
         else {
             // should not get here
             Log4swift[Self.self].error("tag: '\(self.tag)' found no match from: '\(sortDescriptors)'")
             return }
 
-        self.columnSorts = updated
+        self.columnSort = first
     }
 }
 

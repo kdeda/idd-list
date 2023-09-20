@@ -11,7 +11,7 @@ import SwiftUI
 import Log4swift
 
 public class TableView<RowValue>: NSTableView
-    where RowValue: Identifiable, RowValue: Equatable
+where RowValue: Identifiable, RowValue: Equatable
 {
     public var axes: Axis.Set = [.horizontal, .vertical]
 
@@ -24,13 +24,23 @@ public class TableView<RowValue>: NSTableView
             .forEach(self.addTableColumn)
 
         if columns.count == 1 {
-            // we want the first column to fit
+            // since we have just one column we want it to fill the width of the table view
             var last = self.tableColumns[0]
             last.resizingMask = [.autoresizingMask]
             self.sizeLastColumnToFit()
 
             last = self.tableColumns[0]
             Log4swift[Self.self].debug("width: '\(last.width)'")
+        } else {
+            /**
+             this will attempt to resize each column uniformly
+             a column is resizable if it has a Column.WidthType of .limits
+             see: Column+NSTableColumn.swift
+
+             the sizing will stretch/compress each sizable column till they reach the min or max width
+             so be judicial with your SwiftUI Column.frame call
+             */
+            self.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         }
 
         self.translatesAutoresizingMaskIntoConstraints = false

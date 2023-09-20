@@ -139,23 +139,37 @@ extension NSSortDescriptor {
  */
 extension Array {
     func updateColumnSorts<RowValue>(
-        _ columnSorts: [ColumnSort<RowValue>]
+        _ initialSelection: Binding<ColumnSort<RowValue>>
     ) -> Array where Element == Column<RowValue>
     {
         /**
-         Preserve the state of the column sort. The user has just given us the columnSorts which is
-         the truth. Each corresponding column sort should reflect that state.
-         This assures the view's initial render to perfectly match the state.
-         Later on as the columns are sorted up or down, the values will be pushed back into the columnSorts binding and kept in sync.
+         Preserve the state of the column sort. The user has just given us the initialSelection
+         which is the truth. The corresponding column sort should reflect that.
+         There should be one item typically here under initialSelection.
+
+         This assures the view's initial render to perfectly match the initial state.
+         Later on as the columns are sorted up or down, the values will be pushed back into the initialSelection binding and kept in sync.
          */
         let update = self
             .map { column in
+                guard column.columnSort.columnID == initialSelection.wrappedValue.columnID
+                else { return column }
+                   
                 var copy = column
-                // make sure a given column's initial sort matches the one that came from the state
-                // this way you can have a column sort, pre selected upon load
-                //
-                if let truth = columnSorts.first(where: { $0.columnID == column.columnSort.columnID }) {
-                    copy.columnSort.ascending = truth.ascending
+                copy.columnSort.ascending = initialSelection.wrappedValue.ascending
+
+                /**
+                 Often the initialSelection does not have a proper func for convenience
+                 see: ColumnSortPersistence for more
+                 So here we will properly set the initialSelection compare func to what we defined for this particular
+                 column during the SwiftUI DSL construction
+
+                 To avoid the
+                 Publishing changes from within view updates is not allowed, this will cause undefined behavior.
+                 do it after the current run loop
+                 */
+                DispatchQueue.main.async {
+                    initialSelection.wrappedValue.compare = copy.columnSort.compare
                 }
                 return copy
             }

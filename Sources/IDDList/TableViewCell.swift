@@ -47,12 +47,7 @@ public final class TableViewCell: NSTableCellView {
         }
         set {
             super.backgroundStyle = newValue
-
-            let isHighlighted = newValue == .emphasized
-            if self.cellModel.isHighlighted != isHighlighted {
-                // Log4swift[Self.self].info("backgroundStyle: '\(cellModel.objectID)' isHighlighted: '\(isHighlighted)'")
-                self.cellModel.isHighlighted = isHighlighted
-            }
+            self.cellModel.updateIsHighlighted(newValue == .emphasized)
         }
     }
 

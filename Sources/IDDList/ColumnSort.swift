@@ -15,12 +15,12 @@ public typealias ColumnSortCompare<RowValue> = (_ lhs: RowValue, _ rhs: RowValue
 /// We wanted to use KeyPaths for this and avoid introducing an extra generic for the value
 /// The solution here is type erasure. We collect the strong type upon init, but than we earse it
 public struct ColumnSort<RowValue> where RowValue: Equatable {
-    private let compare: ColumnSortCompare<RowValue>
+    internal var compare: ColumnSortCompare<RowValue>
     public var ascending = false
     public let columnID: NSUserInterfaceItemIdentifier
 
     public init(
-        compare: @escaping ColumnSortCompare<RowValue>,
+        compare: @escaping ColumnSortCompare<RowValue> = { _, _ in true },
         ascending: Bool = false,
         columnID: String = ""
     ) {
@@ -44,5 +44,52 @@ extension ColumnSort: Equatable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.columnID == rhs.columnID
         && lhs.ascending == rhs.ascending
+    }
+}
+
+/**
+ Helper struct to save/load a column sort meta data from UserDefaults
+
+ Example Declaration
+ ```
+ final class struct Foo {
+   /// The default sort we start at
+   @BindingState var columnSort: ColumnSort<TableNode> = .init(ascending: false, columnID: "On Disk")
+   /// The value we use to read/write this in user defaults
+   @UserDefaultsValue(ColumnSortPersistence(ascending: false, columnID: "On Disk"), forKey: "Foo.savedColumnSort") var columnSortPersistence: ColumnSortPersistence
+
+   init() {
+     // when we are initialized we will pluck the last value saved
+     self.columnSort = .init(persistence: self.columnSortPersistence)
+   }
+
+   /// save the changes, so we can remember it for the next application launch
+   func setColumnSort(_ newValue: ColumnSort<TableNode>) {
+     columnSort = newValue
+     columnSortPersistence = newValue.persistence
+   }
+ }
+ ```
+ */
+public struct ColumnSortPersistence: Equatable, Codable {
+    public let ascending: Bool
+    public let columnID: String
+
+    public init(
+        ascending: Bool = false,
+        columnID: String
+    ) {
+        self.ascending = ascending
+        self.columnID = columnID
+    }
+}
+
+extension ColumnSort {
+    public init(persistence: ColumnSortPersistence) {
+        self.init(ascending: persistence.ascending, columnID: persistence.columnID)
+    }
+
+    public var persistence: ColumnSortPersistence {
+        ColumnSortPersistence(ascending: self.ascending, columnID: self.columnID.rawValue)
     }
 }

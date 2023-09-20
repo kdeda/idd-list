@@ -10,7 +10,7 @@ import AppKit
 import SwiftUI
 
 public class TableScrollView<RowValue>: NSScrollView
-    where RowValue: Identifiable, RowValue: Equatable
+where RowValue: Identifiable, RowValue: Equatable
 {
     public let tableView: TableView<RowValue>
     

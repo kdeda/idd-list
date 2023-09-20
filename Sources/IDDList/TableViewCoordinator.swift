@@ -18,7 +18,7 @@ enum UpdateSource {
 }
 
 public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
-    where RowValue: Identifiable, RowValue: Equatable
+where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 {
     var rows: [RowValue]
     // this reference is update each time a new parent is created
@@ -29,6 +29,29 @@ public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate
     public init(_ parent: IDDList<RowValue>, rows: [RowValue]) {
         self.parent = parent
         self.rows = rows
+    }
+
+    private func createCellView(tableView: NSTableView, tableColumn: NSTableColumn, column: Column<RowValue>, row: Int) -> TableViewCell {
+        let cell = TableViewCell.makeView(in: tableView)
+        var frame = column.width.frame
+        if tableView.tableColumns.count == 1 {
+            let width = tableColumn.width
+            frame = (minWidth: width, idealWidth: width, maxWidth: width)
+        }
+
+        // Log4swift[Self.self].info("column: '\(column.title)' frame: '\(frame)'")
+        // Log4swift[Self.self].info("alignment: '\(column.alignment == .trailing ? "trailing" : "")'")
+
+        cell.hostingView.rootView = AnyView(
+            column
+                .cellView(rows[row])
+            // .frame(width: frame.minWidth, alignment: column.alignment)
+                .frame(minWidth: frame.minWidth, idealWidth: frame.idealWidth, maxWidth: frame.maxWidth, alignment: column.alignment)
+            // .border(Color.yellow)
+                .environmentObject(cell.cellModel)
+        )
+        cell.hostingView.invalidateIntrinsicContentSize()
+        return cell
     }
 
     // MARK: - NSTableViewDelegate -
@@ -60,26 +83,12 @@ public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate
         guard let tableColumn,
               let column = parent.columns.first(where: { $0.id == tableColumn.identifier })
         else { return nil }
-        let cell = TableViewCell.makeView(in: tableView)
 
-        var frame = column.width.frame
-        if tableView.tableColumns.count == 1 {
-            let width = tableColumn.width
-            frame = (minWidth: width, idealWidth: width, maxWidth: width)
-        }
+        return self.createCellView(tableView: tableView, tableColumn: tableColumn, column: column, row: row)
+    }
 
-        //        Log4swift[Self.self].info("column: '\(column.title)' frame: '\(frame)'")
-        //        Log4swift[Self.self].info("alignment: '\(column.alignment == .trailing ? "trailing" : "")'")
-
-        cell.hostingView.rootView = AnyView(column
-            .cellView(rows[row])
-                                            // .frame(width: frame.minWidth, alignment: column.alignment)
-            .frame(minWidth: frame.minWidth, idealWidth: frame.idealWidth, maxWidth: frame.maxWidth, alignment: column.alignment)
-                                            // .border(Color.yellow)
-            .environmentObject(cell.cellModel)
-        )
-        cell.hostingView.invalidateIntrinsicContentSize()
-        return cell
+    @MainActor public func tableView(_ tableView: NSTableView, sizeToFitWidthOfColumn column: Int) -> CGFloat {
+        return 100
     }
 
     // MARK: - NSTableViewDataSource -

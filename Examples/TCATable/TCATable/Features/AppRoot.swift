@@ -19,9 +19,11 @@ struct AppRoot: Reducer {
         var id = UUID()
         var isAppReady = false
         var files: [File] = []
+        var rootURL = URL(fileURLWithPath: NSHomeDirectory())
+        var lastBatch = 0
         @BindingState var selectedFiles: Set<File.ID> = []
         @BindingState var columnSorts: [ColumnSort<File>] = [
-            .init(compare: { $0.physicalSize < $1.physicalSize }, ascending: true, columnID: "File Size in Bytes")
+            .init(compare: { $0.fileName < $1.fileName }, ascending: true, columnID: "File Name")
         ]
     }
 
@@ -31,6 +33,8 @@ struct AppRoot: Reducer {
         case setFiles([File])
         case selectedFilesDidChange([File])
         case sortFiles(ColumnSort<File>)
+        case loadAnotherBatch
+        case removeSelection
     }
 
     @Dependency(\.fileClient) var fileClient
@@ -60,9 +64,9 @@ struct AppRoot: Reducer {
             case .appDidStart where !state.isAppReady:
                 state.isAppReady = true
 
-                return .run { send in
+                return .run { [rootURL = state.rootURL] send in
                     await send(.setFiles(
-                        await fileClient.fetchFiles(URL(fileURLWithPath: NSHomeDirectory()))
+                        await fileClient.fetchFiles(rootURL)
                     ))
                 }
 
@@ -72,11 +76,15 @@ struct AppRoot: Reducer {
             case let .setFiles(newValue):
                 Log4swift[Self.self].info("files: '\(newValue.count)'")
 
-                state.files = newValue
-                let newSelection = newValue.filter({ state.selectedFiles.contains($0.id) })
+                state.files.append(contentsOf: newValue)
 
                 // preserve selection
-                state.selectedFiles = Set(newSelection.map(\.id))
+                let newSelection_ = state.files.filter({ state.selectedFiles.contains($0.id) })
+                let newSelection = Set(newSelection_.map(\.id))
+                if newSelection != state.selectedFiles {
+                    Log4swift[Self.self].info("newSelection: '\(newSelection)'")
+                    state.selectedFiles = newSelection
+                }
                 return .send(.sortFiles(state.columnSorts[0]))
 
             case let .selectedFilesDidChange(newValue):
@@ -85,7 +93,7 @@ struct AppRoot: Reducer {
 
             case let .sortFiles(columnSort):
                 var startDate = Date()
-                Log4swift[Self.self].info("columnSort.ascending: '\(columnSort.ascending)'")
+                Log4swift[Self.self].info(".sortFiles: columnSort[\(columnSort.columnID)].ascending: '\(columnSort.ascending)'")
 
 //                var files = state.files
 //                files.sort(by: { lhs, rhs in
@@ -117,6 +125,24 @@ struct AppRoot: Reducer {
                     }
                 }
                 return .none
+
+            case .loadAnotherBatch:
+                state.lastBatch += 1
+                return .run { [rootURL = state.rootURL, batch = state.lastBatch] send in
+                    await send(.setFiles(
+                        await fileClient.loadAnotherBatch(rootURL, batch)
+                    ))
+                }
+            case .removeSelection:
+                state.files = state.files.reduce(into: [File](), { partialResult, nextItem in
+                    guard !state.selectedFiles.contains(nextItem.id)
+                    else { return }
+                    partialResult.append(nextItem)
+                })
+                state.selectedFiles.removeAll()
+                return .none
+
+
             }
         }
     }
