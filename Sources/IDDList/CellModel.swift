@@ -28,7 +28,7 @@ public final class CellModel: ObservableObject {
     public func updateIsHighlighted(_ newValue: Bool) {
         if self.isHighlighted != newValue {
             Task { @MainActor in
-                Log4swift[Self.self].info("backgroundStyle: '\(self.objectID)' isHighlighted: '\(newValue)' was: '\(self.isHighlighted)'")
+                Log4swift[Self.self].debug("backgroundStyle: '\(self.objectID)' isHighlighted: '\(newValue)' was: '\(self.isHighlighted)'")
                 self.isHighlighted = newValue
             }
         }
