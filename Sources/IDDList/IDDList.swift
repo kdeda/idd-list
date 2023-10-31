@@ -209,6 +209,17 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         context.coordinator.updateStatus = .fromNSView
         defer { context.coordinator.updateStatus = .none }
 
+        /**
+         Reload just the visible cells.
+         */
+        func reloadVisible() {
+            let visibleRows = tableView.rows(in: tableView.visibleRect)
+            let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
+
+            // Log4swift[Self.self].info("tag: '\(self.tag)' detected changes in general ...")
+            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
+        }
+        
         // Log4swift[Self.self].info("detected changes ...")
         let tableView = nsView.tableView
         context.coordinator.parent = self
@@ -269,6 +280,18 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             // the binding shall to drive the ui
             let selectedRowIndexes = selectedIndexes()
             
+            if selectedRowIndexes.isEmpty {
+                tableView.deselectAll(nil)
+                DispatchQueue.main.async {
+                    /**
+                     If we have no selection, so we should have no highlights.
+                     But somehow i'm not able to trigger the un-highlight when the selection is set to emtpy
+                     The reload will do it, but it might cause a slight flicker
+                     */
+                    reloadVisible()
+                }
+                return
+            }
             Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
             tableView.reloadData(forRowIndexes: selectedRowIndexes, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
             tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
@@ -281,11 +304,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         } else {
             // catch all, something changed, this is light weight anyhow
-            let visibleRows = tableView.rows(in: tableView.visibleRect)
-            let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
-
-            // Log4swift[Self.self].info("tag: '\(self.tag)' detected changes in general ...")
-            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
+            reloadVisible()
         }
 
         // update column visibility

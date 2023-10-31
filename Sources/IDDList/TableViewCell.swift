@@ -41,6 +41,10 @@ public final class TableViewCell: NSTableCellView {
         fatalError("Not implemented")
     }
 
+    /**
+     Called magically by apple's AppKit.
+     Say you select a row, or say you switch from one app to another. The old app selection becomes 'un-highlighted'
+     */
     public override var backgroundStyle: NSView.BackgroundStyle {
         get {
             super.backgroundStyle
