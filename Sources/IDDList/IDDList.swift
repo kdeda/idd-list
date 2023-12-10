@@ -75,12 +75,6 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         // prevent glitchy behavior when axes are constrained
         rv.verticalScrollElasticity = scrollAxes.contains(.vertical) ? .automatic : .none
         rv.horizontalScrollElasticity = scrollAxes.contains(.horizontal) ? .automatic : .none
-
-        // introspection blocks
-        for block in introspectBlocks {
-            block(tableView, rv)
-        }
-
         return rv
     }
 
@@ -157,6 +151,11 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         tableView.dataSource = context.coordinator
         tableView.intercellSpacing = .init(width: 10, height: 1)
         scrollView.hasHorizontalScroller = false
+
+        // introspection blocks
+        for block in introspectBlocks {
+            block(tableView, scrollView)
+        }
 
         if let sortDescriptor = tableView.sortDescriptors.first,
            let sortedColumn = tableView.tableColumns.first(where: { $0.sortDescriptorPrototype == sortDescriptor }) {
@@ -383,7 +382,12 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 // MARK: - View Modifiers -
 
 extension IDDList {
-    /// A generic introspection block that allows direct access to the table view and scroll view objects.
+    /**
+     A generic introspection block that allows direct access to the tableView and scrollView objects.
+
+     This code will be called after the tableView and the scrollView are created and allows one
+     to override or set other values such as tableViews.intercellSpacing which bt default is set to `.init(width: 10, height: 1)`
+     */
     public func introspect(
         _ block: @escaping IntrospectBlock
     ) -> Self {
