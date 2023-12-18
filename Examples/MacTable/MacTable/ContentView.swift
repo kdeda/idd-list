@@ -15,9 +15,7 @@ struct ContentView: View {
     @State var rows = Store.cars
     @State var selection: Car.ID?
     /// The initial column sort
-    @State var columnSorts: [ColumnSort<Car>] = [
-        .init(compare: { $0.year < $1.year }, ascending: true, columnID: "Year")
-    ]
+    @State var columnSort: ColumnSort<Car> = .init(ascending: false, columnID: "year")
     @State var showExtraColumn = false
     @State var categoryColumnTitle = "Category"
     
@@ -76,19 +74,18 @@ struct ContentView: View {
             IDDList(
                 rows,
                 singleSelection: $selection,
-                columnSorts: Binding<[ColumnSort<Car>]>(
+                columnSort: Binding<ColumnSort<Car>>(
                     get: {
-                        columnSorts
+                        columnSort
                     }, set: { newValue in
-                        self.columnSorts = newValue
+                        self.columnSort = newValue
 
-                        let sortDescriptor = columnSorts[0]
-                        rows = rows.sorted(by: sortDescriptor.comparator)
+                        rows = rows.sorted(by: self.columnSort.comparator)
                         Log4swift[Self.self].info("sorted.rows: \(rows.count)")
                     }
                 )
             ) {
-                Column("Year", id: "Year") { rowValue in
+                Column("Year", id: "year") { rowValue in
                     CellView { model in
                         Text("\(rowValue.year)")
                             .foregroundColor(model.isHighlighted ? .none : .secondary)
@@ -97,7 +94,7 @@ struct ContentView: View {
                 .columnSort(compare: { $0.year < $1.year })
                 .frame(width: 60, alignment: .trailing)
 
-                Column("Make", id: "Make") { rowValue in
+                Column("Make", id: "make") { rowValue in
                     Text(rowValue.make)
                 }
                 .columnSort(compare: { $0.make < $1.make })
@@ -108,7 +105,7 @@ struct ContentView: View {
                 }
                 .frame(width: 20)
 
-                Column("Model", id: "Model") { rowValue in
+                Column("Model", id: "model") { rowValue in
                     CellView { model in
                         Text("\(rowValue.model)")
                             .foregroundColor(model.isHighlighted ? .none : .yellow)
@@ -118,14 +115,14 @@ struct ContentView: View {
                 .frame(minWidth: 60, ideal: 80, maxWidth: 100)
 
                 if showExtraColumn {
-                    Column("Extra", id: "Extra") { rowValue in
+                    Column("Extra", id: "extra") { rowValue in
                         Text(rowValue.extraColumn)
                     }
                     .columnSort(compare: { $0.extraColumn < $1.extraColumn })
                     .frame(minWidth: 180, ideal: 180, maxWidth: 280)
                 }
 
-                Column(categoryColumnTitle, id: "Category") { rowValue in
+                Column(categoryColumnTitle, id: "category") { rowValue in
                     Text(rowValue.category)
                 }
                 .columnSort(compare: { $0.category < $1.category })

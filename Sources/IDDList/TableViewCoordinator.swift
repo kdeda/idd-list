@@ -20,18 +20,26 @@ enum UpdateSource {
 public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
 where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 {
-    var rows: [RowValue]
+    var rows: [TableRowValue<RowValue>]
     // this reference is update each time a new parent is created
     // IDDList.updateNSView
     var parent: IDDList<RowValue>
     var updateStatus: UpdateSource = .none
 
-    public init(_ parent: IDDList<RowValue>, rows: [RowValue]) {
+    public init(
+        _ parent: IDDList<RowValue>,
+        rows: [TableRowValue<RowValue>]
+    ) {
         self.parent = parent
         self.rows = rows
     }
 
-    private func createCellView(tableView: NSTableView, tableColumn: NSTableColumn, column: Column<RowValue>, row: Int) -> TableViewCell {
+    private func createCellView(
+        tableView: NSTableView,
+        tableColumn: NSTableColumn,
+        column: Column<RowValue>,
+        row: Int
+    ) -> TableViewCell {
         let cell = TableViewCell.makeView(in: tableView)
         var frame = column.width.frame
         if tableView.tableColumns.count == 1 {
@@ -44,7 +52,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 
         cell.hostingView.rootView = AnyView(
             column
-                .cellView(rows[row])
+                .cellView(rows[row].value)
             // .frame(width: frame.minWidth, alignment: column.alignment)
                 .frame(minWidth: frame.minWidth, idealWidth: frame.idealWidth, maxWidth: frame.maxWidth, alignment: column.alignment)
             // .border(Color.yellow)
@@ -87,7 +95,10 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         return self.createCellView(tableView: tableView, tableColumn: tableColumn, column: column, row: row)
     }
 
-    @MainActor public func tableView(_ tableView: NSTableView, sizeToFitWidthOfColumn column: Int) -> CGFloat {
+    @MainActor public func tableView(
+        _ tableView: NSTableView,
+        sizeToFitWidthOfColumn column: Int
+    ) -> CGFloat {
         return 100
     }
 

@@ -76,16 +76,16 @@ struct AppRootView: View {
                 IDDList(
                     viewStore.files,
                     multipleSelection: viewStore.$selectedFiles,
-                    columnSorts: viewStore.$columnSorts
+                    columnSort: viewStore.$columnSort
                 ) {
-                    Column("File Size in Bytes", id: "File Size in Bytes") { rowValue in
+                    Column("File Size in Bytes", id: "physicalSize") { rowValue in
                         Text(rowValue.physicalSize.decimalFormatted)
                             .font(.subheadline)
                     }
                     .frame(width: 130, alignment: .trailing)
                     .columnSort(compare: { $0.physicalSize < $1.physicalSize })
 
-                    Column("On Disk", id: "On Disk") { rowValue in
+                    Column("On Disk", id: "logicalSize") { rowValue in
                         Text(rowValue.logicalSize.compactFormatted)
                             .font(.subheadline)
                     }
@@ -109,7 +109,7 @@ struct AppRootView: View {
                     }
                     .frame(width: 24, alignment: .center)
 
-                    Column("Date Modified", id: "Date Modified") { rowValue in
+                    Column("Date Modified", id: "lastModified") { rowValue in
                         Text(File.lastModified.string(from: rowValue.modificationDate))
                             .lineLimit(1)
                             .font(.subheadline)
@@ -117,7 +117,7 @@ struct AppRootView: View {
                     .frame(width: 160)
                     .columnSort(compare: { $0.modificationDate < $1.modificationDate })
 
-                    Column("File Name", id: "File Name") { rowValue in
+                    Column("File Name", id: "fileName") { rowValue in
                         Text("\(String(format: "%02d - %@", rowValue.batchID, rowValue.fileName))")
                             .lineLimit(1)
                             .truncationMode(.middle)
@@ -126,7 +126,7 @@ struct AppRootView: View {
                     .frame(minWidth: 140, ideal: 200, maxWidth: 280)
                     .columnSort(compare: { $0.fileName < $1.fileName })
 
-                    Column("File Path", id: "File Path") { rowValue in
+                    Column("File Path", id: "filePath") { rowValue in
                         HStack {
                             Image(nsImage: rowValue.icon)
                                 .resizable()
@@ -166,22 +166,34 @@ struct AppRootView: View {
     }
 }
 
-struct AppRootView_Previews: PreviewProvider {
-    static var previews: some View {
-        AppRootView(store: Store(
-            initialState: AppRoot.State.mock,
-            reducer: AppRoot.init
-        ))
+fileprivate func store() -> StoreOf<AppRoot> {
+    let state = AppRoot.State()
+
+    return Store(
+        initialState: state,
+        reducer: AppRoot.init
+    )
+}
+
+#Preview("AppRootView - Light") {
+    AppRootView(store: store())
         .frame(width: 840)
         .frame(height: 640)
-        .background(Color(NSColor.windowBackgroundColor))
-        .environment(\.colorScheme, .light)
-        
-        AppRootView(store: Store(
-            initialState: AppRoot.State.mock,
-            reducer: AppRoot.init
-        ))
-        .background(Color(NSColor.windowBackgroundColor))
-        .environment(\.colorScheme, .dark)
+        .preferredColorScheme(.light)
+}
+
+#Preview("LocalSnapshotsSheetView - Dark") {
+    AppRootView(store: store())
+        .frame(width: 840)
+        .frame(height: 640)
+        .preferredColorScheme(.dark)
+}
+
+
+extension AppRoot.State {
+    static var mock: Self {
+        let rv = AppRoot.State()
+
+        return rv
     }
 }

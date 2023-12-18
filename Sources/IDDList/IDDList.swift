@@ -10,6 +10,7 @@ import AppKit
 import SwiftUI
 import IDDSwift
 import Log4swift
+import DifferenceKit
 
 public struct IDDList<RowValue>: NSViewRepresentable
 where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
@@ -20,7 +21,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     }
 
     public var scrollAxes: Axis.Set = [.horizontal, .vertical]
-    public var rows: [RowValue]
+    private var rows: [TableRowValue<RowValue>]
     private var selectionType: SelectionType
     @Binding private var singleSelection: RowValue.ID?
     @Binding private var multipleSelection: Set<RowValue.ID>
@@ -98,7 +99,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         columnSort: Binding<ColumnSort<RowValue>> = .constant(.init()),
         @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
-        self.rows = rows
+        self.rows = rows.map(TableRowValue.init(rowValue:))
         self.selectionType = .single
         self._singleSelection = singleSelection
         self._multipleSelection = .constant(Set())
@@ -119,7 +120,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         columnSort: Binding<ColumnSort<RowValue>> = .constant(.init()),
         @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
-        self.rows = rows
+        self.rows = rows.map(TableRowValue.init(rowValue:))
         self.selectionType = .multiple
         self._singleSelection = .constant(.none)
         self._multipleSelection = multipleSelection
@@ -208,68 +209,99 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         context.coordinator.updateStatus = .fromNSView
         defer { context.coordinator.updateStatus = .none }
 
-        /**
-         Reload just the visible cells.
-         */
-        func reloadVisible() {
-            let visibleRows = tableView.rows(in: tableView.visibleRect)
-            let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
-
-            // Log4swift[Self.self].info("tag: '\(self.tag)' detected changes in general ...")
-            tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
-        }
-        
         // Log4swift[Self.self].info("detected changes ...")
         let tableView = nsView.tableView
         context.coordinator.parent = self
         if context.coordinator.rows != rows {
-            let bigO = context.coordinator.rows.count * rows.count
-            let MAX_BIG_O = 100_000
+            //  /**
+            //   This is apple's code `Order(N*M)`
+            //   so it will not be called for anything larger than MAX\_BIG\_O
+            //
+            //   version 2.1.3
+            //  */
+            //  func reloadDataWithAnimations_v1() {
+            //      let startDate = Date()
+            //      let updates = rows.difference(from: context.coordinator.rows)
+            //
+            //      Log4swift[Self.self].info("found: '\(updates.count) updates' from rows: '\(rows.count)' in: '\(startDate.elapsedTime) ms'")
+            //      context.coordinator.rows = rows
+            //      guard tableView.reloadTableView(insertions: updates.insertions.count, removals: updates.removals.count)
+            //      else {
+            //          return
+            //      }
+            //
+            //      Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the rows, reloading: '\(rows.count) rows'")
+            //      tableView.beginUpdates()
+            //      for step in updates.steps {
+            //          switch step {
+            //          case let .remove(element, index):
+            //              Log4swift[Self.self].debug("remove: '\(element)'")
+            //              tableView.removeRows(at: [index], withAnimation: .effectFade)
+            //
+            //          case let .insert(element, index):
+            //              Log4swift[Self.self].debug("insert: '\(element)'")
+            //              tableView.insertRows(at: [index], withAnimation: .effectFade)
+            //
+            //          case let .move(element, from, to):
+            //              Log4swift[Self.self].debug("move: '\(element)'")
+            //              tableView.moveRow(at: from, to: to)
+            //          }
+            //      }
+            //      tableView.endUpdates()
+            //      tableView.invalidateIntrinsicContentSize()
+            //  }
+            //
+            //  // define an upper limit to the deltas we want to handle
+            //  // reloadDataWithAnimations will get slow if too many records
+            //  let MAX_BIG_O = 500_000_000_000
+            //
+            //  if  ((context.coordinator.rows.count + 1) * (rows.count + 1)) > MAX_BIG_O
+            //          || (context.coordinator.rows.count == 0 && rows.count != 0)
+            //          || (rows.count == 0 && context.coordinator.rows.count != 0){
+            //      Log4swift[Self.self].info("reloadData current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
+            //      context.coordinator.rows = rows
+            //      tableView.reloadData()
+            //  } else {
+            //      reloadDataWithAnimations_v1()
+            //  }
 
             /**
-             this is n * m complexity
-             so it will not be called for anything larger than MAX_BIG_O
-            */
+             This is Ryo Aoyama's code order 'O(N)`
+             It flies ... Why does apple write such crappy code
+
+             version 2.1.4
+
+             Old code
+             2023-12-14 20:01:03.575 <16883> [I 1c44e58] <IDDList.IDDList<TCATable.File> reloadDataWithAnimations_v1()>   found: '18576 updates' from rows: '37152' in: '23489.753 ms'
+             2023-12-14 20:01:54.262 <16883> [I 1c44e58] <IDDList.IDDList<TCATable.File> reloadDataWithAnimations_v1()>   found: '18576 updates' from rows: '55728' in: '24138.001 ms'
+
+             New code
+             2023-12-14 19:59:37.683 <16789> [I 1c44823] <IDDList.IDDList<TCATable.File> reloadDataWithAnimations()>   found: '1 updates' from rows: '55728' in: '83.533 ms'
+             2023-12-14 19:59:43.144 <16789> [I 1c44823] <IDDList.IDDList<TCATable.File> reloadDataWithAnimations()>   found: '1 updates' from rows: '74304' in: '113.000 ms'
+             Klajd Deda, December 14, 2023
+             */
             func reloadDataWithAnimations() {
                 let startDate = Date()
-                let updates = rows.difference(from: context.coordinator.rows)
-                Log4swift[Self.self].info("found: '\(updates.count) updates' from rows: '\(rows.count)' in: '\(startDate.elapsedTimeInMilliseconds.with3Digits) ms'")
+                let changeset = StagedChangeset(source: context.coordinator.rows, target: rows)
+                let updates = changeset.reduce(into: 0) { $0 += $1.elementUpdated.count }
+                let insertions = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
+                let removals = changeset.reduce(into: 0) { $0 += $1.elementDeleted.count }
 
-                // the rows have changed we shall reload it all
+                Log4swift[Self.self].info("found: '\(updates) updates' from rows: '\(rows.count)' in: '\(startDate.elapsedTime) ms'")
                 context.coordinator.rows = rows
-                guard updates.insertions.count != updates.removals.count
+                guard tableView.reloadTableView(insertions: insertions, removals: removals)
                 else {
-                    // it means all has changed, avoid flicker and direct reload
-                    tableView.reloadData()
                     return
                 }
+
                 Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the rows, reloading: '\(rows.count) rows'")
-                tableView.beginUpdates()
-                for step in updates.steps {
-                    switch step {
-                    case let .remove(element, index):
-                        Log4swift[Self.self].debug("remove: '\(element)'")
-                        tableView.removeRows(at: [index], withAnimation: .effectFade)
-
-                    case let .insert(element, index):
-                        Log4swift[Self.self].debug("insert: '\(element)'")
-                        tableView.insertRows(at: [index], withAnimation: .effectFade)
-
-                    case let .move(element, from, to):
-                        Log4swift[Self.self].debug("move: '\(element)'")
-                        tableView.moveRow(at: from, to: to)
-                    }
+                tableView.reload(using: changeset, with: .effectFade) { data in
+                    context.coordinator.rows = rows
                 }
-                tableView.endUpdates()
-                tableView.invalidateIntrinsicContentSize()
             }
 
-            if bigO > MAX_BIG_O {
-                context.coordinator.rows = rows
-                tableView.reloadData()
-            } else {
-                reloadDataWithAnimations()
-            }
+            Log4swift[Self.self].info("reloadDataWithAnimations current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
+            reloadDataWithAnimations()
 
             // preserve selection
             let selectedRowIndexes = selectedIndexes()
@@ -287,7 +319,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                      But somehow i'm not able to trigger the un-highlight when the selection is set to emtpy
                      The reload will do it, but it might cause a slight flicker
                      */
-                    reloadVisible()
+                    tableView.reloadVisibleRows()
                 }
                 return
             }
@@ -303,7 +335,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         } else {
             // catch all, something changed, this is light weight anyhow
-            reloadVisible()
+            tableView.reloadVisibleRows()
         }
 
         // update column visibility

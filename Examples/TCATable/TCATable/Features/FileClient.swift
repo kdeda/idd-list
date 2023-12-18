@@ -29,34 +29,50 @@ extension DependencyValues {
 
 extension FileClient: DependencyKey {
     public static let liveValue: Self = {
-        func fetchFiles(url: URL, batchID: Int, batchSize: Int) -> [File] {
-            let files = url
-                .contentsOfDirectory
-                .enumerated()
-                .map { File.init(fileURL: $0.element) }
+        // make sur eto use a giant folder
+        // "/Volumes/Vault/Library/FoldersWithLotsOfFiles/18000 files"
+        let maxCount = 100_000
+        // let maxCount = 10
+        var files: [File] = []
 
-            let rv = batchID == 0 ? files : Array(files.prefix(min(files.count, batchSize)))
+        func fetchFiles(url: URL, batchID: Int) -> [File] {
+            let files = {
+                guard files.isEmpty
+                else { return files }
 
-            let newValues: [File] = rv.map { file in
-                var newCopy = file
+                // load once
+                let files_ = url
+                    .contentsOfDirectory
+                    .enumerated()
+                    .map { File.init(fileURL: $0.element) }
+                    .sorted { $0.fileName > $1.fileName }
 
-                if batchSize != 0 {
-                    newCopy.batchID = batchID
-                    newCopy.logicalSize += newCopy.logicalSize * Int64.random(in: newCopy.logicalSize ... newCopy.logicalSize * 10)
-                    newCopy.physicalSize += newCopy.physicalSize * Int64.random(in: newCopy.logicalSize ... newCopy.logicalSize * 10)
-                }
-                return newCopy
+                files = Array(files_.prefix(min(files_.count, maxCount)))
+                return files
+            }()
+
+            if batchID == 0 {
+                return files
             }
 
+            let newValues: [File] = files.map { file in
+                var newCopy = file
+
+                newCopy.batchID = batchID
+                newCopy.fileName = newCopy.fileName + " (\(batchID))"
+                newCopy.logicalSize += newCopy.logicalSize * Int64.random(in: newCopy.logicalSize ... newCopy.logicalSize * 10)
+                newCopy.physicalSize += newCopy.physicalSize * Int64.random(in: newCopy.logicalSize ... newCopy.logicalSize * 10)
+                return newCopy
+            }
             return newValues
         }
 
         return Self(
             fetchFiles: { url in
-                return fetchFiles(url: url, batchID: 0, batchSize: 0)
+                return fetchFiles(url: url, batchID: 0)
             },
             loadAnotherBatch: { url, batchID in
-                return fetchFiles(url: url, batchID: batchID, batchSize: Int.random(in: 5 ... 50))
+                return fetchFiles(url: url, batchID: batchID) // Int.random(in: 5 ... 50))
             }
         )
     }()

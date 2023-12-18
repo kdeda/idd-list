@@ -74,3 +74,38 @@ where RowValue: Identifiable, RowValue: Equatable
         return newRect
     }
 }
+
+// MARK: - TableView Convenience -
+
+extension TableView {
+    /**
+     Reload just the visible cells.
+     */
+    internal func reloadVisibleRows() {
+        let visibleRows = rows(in: visibleRect)
+        let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
+
+        // Log4swift[Self.self].info("tag: '\(self.tag)' detected changes in general ...")
+        reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableColumns.count))
+    }
+}
+
+// MARK: - TableView Workaround -
+
+extension TableView {
+    /**
+     this means we have only moves, no inserts or removals
+     without this precaution the table view will animate this in a weird almost rotation looking animation
+     for tables with large number of rows this will look as if the screen goes blank for a second
+     but for a small table with a dozen or so items it become apparent
+     Klajd Deda, December 14, 2023
+     */
+    internal func reloadTableView(insertions: Int, removals: Int) -> Bool {
+        guard insertions != removals
+        else {
+            self.reloadData()
+            return false
+        }
+        return true
+    }
+}

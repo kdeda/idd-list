@@ -13,18 +13,17 @@ import Log4swift
 import IDDList
 import SwiftUI
 
-struct AppRoot: Reducer {
+@Reducer
+struct AppRoot {
     /// This is the state for the TableView
     struct State: Equatable, Identifiable {
         var id = UUID()
         var isAppReady = false
         var files: [File] = []
-        var rootURL = URL(fileURLWithPath: NSHomeDirectory())
+        var rootURL = URL(fileURLWithPath: "/Volumes/Vault/Library/FoldersWithLotsOfFiles/18000 files") // NSHomeDirectory())
         var lastBatch = 0
         @BindingState var selectedFiles: Set<File.ID> = []
-        @BindingState var columnSorts: [ColumnSort<File>] = [
-            .init(compare: { $0.fileName < $1.fileName }, ascending: true, columnID: "File Name")
-        ]
+        @BindingState var columnSort: ColumnSort<File> = .init(ascending: false, columnID: "fileName")
     }
 
     enum Action: BindableAction, Equatable {
@@ -55,8 +54,8 @@ struct AppRoot: Reducer {
 //                return .send(.selectedFilesDidChange(files))
                 return .none
 
-            case .binding(\.$columnSorts):
-                return .send(.sortFiles(state.columnSorts[0]))
+            case .binding(\.$columnSort):
+                return .send(.sortFiles(state.columnSort))
 
             case .binding:
                 return .none
@@ -85,7 +84,7 @@ struct AppRoot: Reducer {
                     Log4swift[Self.self].info("newSelection: '\(newSelection)'")
                     state.selectedFiles = newSelection
                 }
-                return .send(.sortFiles(state.columnSorts[0]))
+                return .send(.sortFiles(state.columnSort))
 
             case let .selectedFilesDidChange(newValue):
                 state.selectedFiles = Set(newValue.map(\.id))
@@ -142,16 +141,7 @@ struct AppRoot: Reducer {
                 state.selectedFiles.removeAll()
                 return .none
 
-
             }
         }
-    }
-}
-
-extension AppRoot.State {
-    static var mock: Self {
-        let rv = AppRoot.State()
-
-        return rv
     }
 }
