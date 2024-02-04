@@ -37,6 +37,7 @@ where RowValue: Identifiable, RowValue: Equatable
     var title: String
     let id: NSUserInterfaceItemIdentifier
     var isVisible: Bool = true
+    var isBrowserColumn: Bool = false
     var alignment: Alignment = .leading
 
     var width: WidthType = .fixed(10)
@@ -117,6 +118,14 @@ extension Column {
         var copy = self
 
         copy.columnSort = .init(compare: compare, ascending: false, columnID: self.id.rawValue)
+        return copy
+    }
+
+    /// Slight mutation to adjust the constraints of the cell
+    public func makeBrowserColumn() -> Self {
+        var copy = self
+
+        copy.isBrowserColumn = true
         return copy
     }
 }

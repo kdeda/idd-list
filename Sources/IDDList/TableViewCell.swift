@@ -20,6 +20,7 @@ public final class TableViewCell: NSTableCellView {
         addSubview(hostingView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         // hostingView.layer?.backgroundColor = NSColor.yellow.cgColor
+
         NSLayoutConstraint.activate([
             hostingView.leadingAnchor.constraint(equalTo: leadingAnchor),
             hostingView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -27,15 +28,6 @@ public final class TableViewCell: NSTableCellView {
             hostingView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
-
-    // not sure what this does ..
-    //    private let label = NSTextField.label()
-    //    public override func layout() {
-    //        super.layout()
-    //        
-    //        label.sizeToFit()
-    //        label.frame.origin = CGPoint(x: 2, y: 2)
-    //    }
 
     required init?(coder: NSCoder) {
         fatalError("Not implemented")

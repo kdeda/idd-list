@@ -58,6 +58,24 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             // .border(Color.yellow)
                 .environmentObject(cell.cellModel)
         )
+
+        if column.isBrowserColumn {
+            // kdeda: Feb 4, 2024
+            // when we are modeling a browser columm, usually a tableview with one column
+            // these constraints will cause the cell contents to not scale well
+            // there will be a jump as you resize the column and we do not want that
+            // the following config removes the sizing issues
+            //
+            if let leading = cell.constraints.first(where: { $0.firstAnchor.name == "leading" }),
+               leading.isActive {
+                leading.isActive = false
+            }
+            if let trailing = cell.constraints.first(where: { $0.firstAnchor.name == "trailing" }),
+               trailing.isActive {
+                trailing.isActive = false
+            }
+        }
+
         cell.hostingView.invalidateIntrinsicContentSize()
         return cell
     }
