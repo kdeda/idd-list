@@ -20,22 +20,17 @@ public final class TableViewCell: NSTableCellView {
         addSubview(hostingView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         // hostingView.layer?.backgroundColor = NSColor.yellow.cgColor
+
+        // kdeda: Feb 4, 2024
+        // if we pin here we get a lag when we resize the columns
+        // the content of this cell will not scale well
         NSLayoutConstraint.activate([
-            hostingView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            hostingView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            // hostingView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            // hostingView.trailingAnchor.constraint(equalTo: trailingAnchor),
             hostingView.topAnchor.constraint(equalTo: topAnchor),
             hostingView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
-
-    // not sure what this does ..
-    //    private let label = NSTextField.label()
-    //    public override func layout() {
-    //        super.layout()
-    //        
-    //        label.sizeToFit()
-    //        label.frame.origin = CGPoint(x: 2, y: 2)
-    //    }
 
     required init?(coder: NSCoder) {
         fatalError("Not implemented")
