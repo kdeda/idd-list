@@ -43,7 +43,6 @@ where RowValue: Identifiable, RowValue: Equatable
             self.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         }
 
-        self.translatesAutoresizingMaskIntoConstraints = false
         self.sortDescriptors = columns.compactMap(\.sortDescriptor)
         self.rowHeight = 22.0
 

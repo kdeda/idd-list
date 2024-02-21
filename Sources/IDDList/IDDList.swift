@@ -20,7 +20,6 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         case multiple
     }
 
-    public var scrollAxes: Axis.Set = [.horizontal, .vertical]
     private var rows: [TableRowValue<RowValue>]
     private var selectionType: SelectionType
     @Binding private var singleSelection: RowValue.ID?
@@ -57,7 +56,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 
         rv.allowsMultipleSelection = selectionType == .multiple
         // data source
-        rv.axes = scrollAxes
+        rv.axes = [.horizontal, .vertical]
         rv.sortDescriptors = [columnSort].compactMap(NSSortDescriptor.init)
 
         return rv
@@ -66,16 +65,17 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     private func buildScrollView(tableView: TableView<RowValue>) -> TableScrollView<RowValue> {
         let rv = TableScrollView<RowValue>(tableView: tableView)
 
-        // content and geometry
         rv.translatesAutoresizingMaskIntoConstraints = false // has no effect?
-        rv.documentView = tableView
-
-        rv.hasVerticalScroller = scrollAxes.contains(.vertical)
-        rv.hasHorizontalScroller = scrollAxes.contains(.horizontal)
+        // we want the gutters to always show
+        rv.autohidesScrollers = false
+        rv.hasVerticalScroller = true
+        rv.hasHorizontalScroller = false
 
         // prevent glitchy behavior when axes are constrained
-        rv.verticalScrollElasticity = scrollAxes.contains(.vertical) ? .automatic : .none
-        rv.horizontalScrollElasticity = scrollAxes.contains(.horizontal) ? .automatic : .none
+        rv.verticalScrollElasticity = .automatic // scrollAxes.contains(.vertical) ? .automatic : .none
+        rv.horizontalScrollElasticity = .none // scrollAxes.contains(.horizontal) ? .automatic : .none
+
+        rv.documentView = tableView
         return rv
     }
 
@@ -151,7 +151,6 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
         tableView.intercellSpacing = .init(width: 10, height: 1)
-        scrollView.hasHorizontalScroller = false
 
         // introspection blocks
         for block in introspectBlocks {
@@ -213,58 +212,6 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         let tableView = nsView.tableView
         context.coordinator.parent = self
         if context.coordinator.rows != rows {
-            //  /**
-            //   This is apple's code `Order(N*M)`
-            //   so it will not be called for anything larger than MAX\_BIG\_O
-            //
-            //   version 2.1.3
-            //  */
-            //  func reloadDataWithAnimations_v1() {
-            //      let startDate = Date()
-            //      let updates = rows.difference(from: context.coordinator.rows)
-            //
-            //      Log4swift[Self.self].info("found: '\(updates.count) updates' from rows: '\(rows.count)' in: '\(startDate.elapsedTime) ms'")
-            //      context.coordinator.rows = rows
-            //      guard tableView.reloadTableView(insertions: updates.insertions.count, removals: updates.removals.count)
-            //      else {
-            //          return
-            //      }
-            //
-            //      Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the rows, reloading: '\(rows.count) rows'")
-            //      tableView.beginUpdates()
-            //      for step in updates.steps {
-            //          switch step {
-            //          case let .remove(element, index):
-            //              Log4swift[Self.self].debug("remove: '\(element)'")
-            //              tableView.removeRows(at: [index], withAnimation: .effectFade)
-            //
-            //          case let .insert(element, index):
-            //              Log4swift[Self.self].debug("insert: '\(element)'")
-            //              tableView.insertRows(at: [index], withAnimation: .effectFade)
-            //
-            //          case let .move(element, from, to):
-            //              Log4swift[Self.self].debug("move: '\(element)'")
-            //              tableView.moveRow(at: from, to: to)
-            //          }
-            //      }
-            //      tableView.endUpdates()
-            //      tableView.invalidateIntrinsicContentSize()
-            //  }
-            //
-            //  // define an upper limit to the deltas we want to handle
-            //  // reloadDataWithAnimations will get slow if too many records
-            //  let MAX_BIG_O = 500_000_000_000
-            //
-            //  if  ((context.coordinator.rows.count + 1) * (rows.count + 1)) > MAX_BIG_O
-            //          || (context.coordinator.rows.count == 0 && rows.count != 0)
-            //          || (rows.count == 0 && context.coordinator.rows.count != 0){
-            //      Log4swift[Self.self].info("reloadData current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
-            //      context.coordinator.rows = rows
-            //      tableView.reloadData()
-            //  } else {
-            //      reloadDataWithAnimations_v1()
-            //  }
-
             /**
              This is Ryo Aoyama's code order 'O(N)`
              It flies ... Why does apple write such crappy code
@@ -326,7 +273,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
             tableView.reloadData(forRowIndexes: selectedRowIndexes, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
             tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
-        } else if tableFrame.size.width != tableView.frame.size.width {
+        } else if Int(abs(tableFrame.size.width - nsView.frame.size.width)) > 0 {
             // the view was resized, reload visible rows and remember the new size
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
@@ -346,10 +293,10 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             tableColumn.isHidden = !columns[foundIdx].isVisible
         }
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             // have to in order to avoid SwiftUI recursive complaint
-            if self.tableFrame.size.width != tableView.frame.size.width {
-                self.tableFrame = tableView.frame
+            if Int(abs(tableFrame.size.width - nsView.frame.size.width)) > 0 {
+                self.tableFrame = nsView.frame
                 Log4swift[Self.self].debug("tag: '\(self.tag)' saved: '\(tableFrame)'")
             }
         }
