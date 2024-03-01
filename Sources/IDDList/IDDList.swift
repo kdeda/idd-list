@@ -251,7 +251,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 let insertions = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
                 let removals = changeset.reduce(into: 0) { $0 += $1.elementDeleted.count }
 
-                Log4swift[Self.self].info("updates: '\(updates)' inserts: '\(insertions)' removes: '\(removals)' from rows: '\(rows.count)' in: '\(startDate.elapsedTime) ms'")
+                Log4swift[Self.self].info("updates: '\(updates)' inserts: '\(insertions)' removes: '\(removals)' from rows: '\(rows.count)' completed in: '\(startDate.elapsedTime) ms'")
                 context.coordinator.rows = rows
                 if !tableView.reload(updates: updates, insertions: insertions, removals: removals) {
                     tableView.reload(using: changeset, with: .effectFade) { _ in
