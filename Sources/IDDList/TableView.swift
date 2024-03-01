@@ -93,18 +93,29 @@ extension TableView {
 
 extension TableView {
     /**
-     this means we have only moves, no inserts or removals
-     without this precaution the table view will animate this in a weird almost rotation looking animation
-     for tables with large number of rows this will look as if the screen goes blank for a second
-     but for a small table with a dozen or so items it become apparent
+     Without these precautions the table view will animate this in a weird way, almost as if its rotating over
+     the horizontal axis, further more for tables with large number of rows this will look as if the screen
+     goes blank for a second.
+     For a small table with a dozen or so items it becomes apparent of the artifact.
+     Maybe Apple will fix it.
+
+     Return true to indicate we did the reload
+     Return false to let the upstream do their version of reload
      Klajd Deda, December 14, 2023
      */
-    internal func reloadTableView(insertions: Int, removals: Int) -> Bool {
+    internal func reload(updates: Int, insertions: Int, removals: Int) -> Bool {
+        guard updates + insertions + removals != 0
+        else {
+            self.reloadData()
+            return true
+        }
+
         guard insertions != removals
         else {
             self.reloadData()
-            return false
+            return true
         }
-        return true
+
+        return false
     }
 }

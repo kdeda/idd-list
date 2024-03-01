@@ -166,20 +166,6 @@ extension Array {
                    
                 var copy = column
                 copy.columnSort.ascending = initialSelection.wrappedValue.ascending
-
-                /**
-                 Often the initialSelection does not have a proper func for convenience
-                 see: ColumnSortPersistence for more
-                 So here we will properly set the initialSelection compare func to what we defined for this particular
-                 column during the SwiftUI DSL construction
-
-                 To avoid the
-                 Publishing changes from within view updates is not allowed, this will cause undefined behavior.
-                 do it after the current run loop
-                 */
-                DispatchQueue.main.async {
-                    initialSelection.wrappedValue.compare = copy.columnSort.compare
-                }
                 return copy
             }
         return update

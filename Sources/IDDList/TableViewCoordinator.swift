@@ -47,6 +47,11 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             frame = (minWidth: width, idealWidth: width, maxWidth: width)
         }
 
+        // DEDA DEBUG
+        // Helpers
+        // if row < 5 {
+        //     Log4swift[Self.self].info("[\(String(format: "%03d", row))]'\(column.title)': '\(rows[row].value)'")
+        // }
         // Log4swift[Self.self].info("column: '\(column.title)' frame: '\(frame)'")
         // Log4swift[Self.self].info("alignment: '\(column.alignment == .trailing ? "trailing" : "")'")
 

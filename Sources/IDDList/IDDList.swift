@@ -91,7 +91,8 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     // MARK: - Init -
 
     /**
-     These can be called often
+     This can be called often.
+     We should not push any changes back through the bindings for example.
      */
     public init(
         _ rows: [RowValue],
@@ -112,7 +113,8 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     }
 
     /**
-     These can be called often
+     This can be called often.
+     We should not push any changes back through the bindings for example.
      */
     public init(
         _ rows: [RowValue],
@@ -161,6 +163,21 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
            let sortedColumn = tableView.tableColumns.first(where: { $0.sortDescriptorPrototype == sortDescriptor }) {
             context.coordinator.tableView(tableView, mouseDownInHeaderOf: sortedColumn)
         }
+
+        if let selected = self.columns.first(where: { $0.columnSort.columnID == self.columnSort.columnID }) {
+            /**
+             We are being rendered and want to co-ordinate the compare func with the model
+             They might have set a columnSort usually based on id
+             */
+            DispatchQueue.main.async {
+                /**
+                 Publishing changes from within view updates is not allowed, this will cause undefined behavior.
+                 do it after the current run loop
+                 */
+                self.columnSort.compare = selected.columnSort.compare
+            }
+        }
+
         Log4swift[Self.self].info("tag: '\(self.tag)'")
         return scrollView
     }
@@ -234,16 +251,13 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 let insertions = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
                 let removals = changeset.reduce(into: 0) { $0 += $1.elementDeleted.count }
 
-                Log4swift[Self.self].info("found: '\(updates) updates' from rows: '\(rows.count)' in: '\(startDate.elapsedTime) ms'")
+                Log4swift[Self.self].info("updates: '\(updates)' inserts: '\(insertions)' removes: '\(removals)' from rows: '\(rows.count)' in: '\(startDate.elapsedTime) ms'")
                 context.coordinator.rows = rows
-                guard tableView.reloadTableView(insertions: insertions, removals: removals)
-                else {
-                    return
-                }
-
-                Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the rows, reloading: '\(rows.count) rows'")
-                tableView.reload(using: changeset, with: .effectFade) { data in
-                    context.coordinator.rows = rows
+                if !tableView.reload(updates: updates, insertions: insertions, removals: removals) {
+                    tableView.reload(using: changeset, with: .effectFade) { _ in
+                        // meh we already did this
+                        // context.coordinator.rows = rows
+                    }
                 }
             }
 
@@ -293,7 +307,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             tableColumn.isHidden = !columns[foundIdx].isVisible
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             // have to in order to avoid SwiftUI recursive complaint
             if Int(abs(tableFrame.size.width - nsView.frame.size.width)) > 0 {
                 self.tableFrame = nsView.frame
