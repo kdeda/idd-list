@@ -14,6 +14,7 @@ public class TableView<RowValue>: NSTableView
 where RowValue: Identifiable, RowValue: Equatable
 {
     public var axes: Axis.Set = [.horizontal, .vertical]
+    var tagID: String = ""
 
     init(columns: [Column<RowValue>]) {
         super.init(frame: .zero)
@@ -72,6 +73,24 @@ where RowValue: Identifiable, RowValue: Equatable
 
         return newRect
     }
+
+    /**
+     If we become first responder, trigger the selection change.
+     Give it a tinny delay for better results.
+     */
+    public override func becomeFirstResponder() -> Bool {
+        Log4swift[Self.self].debug("tag: '\(tagID)'")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            let notification = Notification(name: NSTableView.selectionDidChangeNotification, object: self, userInfo: nil)
+            self.delegate?.tableViewSelectionDidChange?(notification)
+        }
+        return super.becomeFirstResponder()
+    }
+
+    public override func resignFirstResponder() -> Bool {
+        Log4swift[Self.self].debug("tag: '\(tagID)'")
+        return super.resignFirstResponder()
+    }
 }
 
 // MARK: - TableView Convenience -
@@ -86,36 +105,5 @@ extension TableView {
 
         // Log4swift[Self.self].info("tag: '\(self.tag)' detected changes in general ...")
         reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableColumns.count))
-    }
-}
-
-// MARK: - TableView Workaround -
-
-extension TableView {
-    /**
-     Without these precautions the table view will animate this in a weird way, almost as if its rotating over
-     the horizontal axis, further more for tables with large number of rows this will look as if the screen
-     goes blank for a second.
-     For a small table with a dozen or so items it becomes apparent of the artifact.
-     Maybe Apple will fix it.
-
-     Return true to indicate we did the reload
-     Return false to let the upstream do their version of reload
-     Klajd Deda, December 14, 2023
-     */
-    internal func reload(updates: Int, insertions: Int, removals: Int) -> Bool {
-        guard updates + insertions + removals != 0
-        else {
-            self.reloadData()
-            return true
-        }
-
-        guard insertions != removals
-        else {
-            self.reloadData()
-            return true
-        }
-
-        return false
     }
 }

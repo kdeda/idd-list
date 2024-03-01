@@ -15,8 +15,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/kdeda/idd-log4-swift.git", "2.0.7" ..< "3.0.0"),
-        .package(url: "https://github.com/kdeda/idd-swift.git", "2.2.2" ..< "3.0.0"),
+        .package(url: "https://github.com/kdeda/idd-log4-swift.git", "2.0.8" ..< "3.0.0"),
+        .package(url: "https://github.com/kdeda/idd-swift.git", "2.2.3" ..< "3.0.0"),
         .package(url: "https://github.com/ra1028/DifferenceKit.git", exact: "1.3.0")
 
     ],

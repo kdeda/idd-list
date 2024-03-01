@@ -29,9 +29,16 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
      We can sort by one column at a time
      */
     @Binding private var columnSort: ColumnSort<RowValue>
+    /**
+     A mechanism by which we can make this view first responder.
+     It will come handy when one has to nagivate between a few tables, say on a column browser view :-)
+     This is an optional binding so it will not affect older users of this code or people that do not care about this.
+     Right now the only user of this is the WhatSize v8 column browser view.
+     */
+    @Binding private var makeFirstResponder: Bool
     @State public var columns: [Column<RowValue>]
     @State private var tableFrame: CGRect = .zero
-    var tag: String = ""
+    var tagID: String = ""
 
     private var selectedRows: IndexSet {
         let indexArray: [Int] = {
@@ -58,6 +65,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         // data source
         rv.axes = [.horizontal, .vertical]
         rv.sortDescriptors = [columnSort].compactMap(NSSortDescriptor.init)
+        rv.tagID = tagID
 
         return rv
     }
@@ -98,6 +106,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         _ rows: [RowValue],
         singleSelection: Binding<RowValue.ID?>,
         columnSort: Binding<ColumnSort<RowValue>> = .constant(.init()),
+        makeFirstResponder: Binding<Bool> = .constant(false),
         @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
         self.rows = rows.map(TableRowValue.init(rowValue:))
@@ -105,6 +114,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         self._singleSelection = singleSelection
         self._multipleSelection = .constant(Set())
         self._columnSort = columnSort
+        self._makeFirstResponder = makeFirstResponder
 
         let updatedColumns = columns().updateColumnSorts(columnSort)
         self._columns = State(initialValue: updatedColumns)
@@ -120,6 +130,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         _ rows: [RowValue],
         multipleSelection: Binding<Set<RowValue.ID>>,
         columnSort: Binding<ColumnSort<RowValue>> = .constant(.init()),
+        makeFirstResponder: Binding<Bool> = .constant(false),
         @ColumnBuilder<RowValue> columns: () -> [Column<RowValue>]
     ) {
         self.rows = rows.map(TableRowValue.init(rowValue:))
@@ -127,6 +138,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         self._singleSelection = .constant(.none)
         self._multipleSelection = multipleSelection
         self._columnSort = columnSort
+        self._makeFirstResponder = makeFirstResponder
 
         let updatedColumns = columns().updateColumnSorts(columnSort)
         self._columns = State(initialValue: updatedColumns)
@@ -134,10 +146,10 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         // Log4swift[Self.self].info("")
     }
 
-    public func tag(_ tag: String) -> Self {
+    public func tag(_ tagID: String) -> Self {
         var copy = self
 
-        copy.tag = tag
+        copy.tagID = tagID
         return copy
     }
 
@@ -178,7 +190,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             }
         }
 
-        Log4swift[Self.self].info("tag: '\(self.tag)'")
+        Log4swift[Self.self].info("tagID: '\(tagID)'")
         return scrollView
     }
 
@@ -225,9 +237,21 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         context.coordinator.updateStatus = .fromNSView
         defer { context.coordinator.updateStatus = .none }
 
-        // Log4swift[Self.self].info("detected changes ...")
         let tableView = nsView.tableView
         context.coordinator.parent = self
+        let isFirstResponder = tableView.window?.firstResponder == tableView
+
+        Log4swift[Self.self].debug("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' isFirstResponder: '\(isFirstResponder)'")
+        if makeFirstResponder && !isFirstResponder {
+            /**
+             We are told to become firstResponder, so we can handle key events.
+             We need to do this once, so we relinquish the makeFirstResponder by setting it to false
+             */
+            Log4swift[Self.self].info("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)'")
+            makeFirstResponder = false
+            tableView.window?.makeFirstResponder(tableView)
+        }
+
         if context.coordinator.rows != rows {
             /**
              This is Ryo Aoyama's code order 'O(N)`
@@ -247,21 +271,28 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             func reloadDataWithAnimations() {
                 let startDate = Date()
                 let changeset = StagedChangeset(source: context.coordinator.rows, target: rows)
-                let updates = changeset.reduce(into: 0) { $0 += $1.elementUpdated.count }
-                let insertions = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
-                let removals = changeset.reduce(into: 0) { $0 += $1.elementDeleted.count }
+                let deleted = changeset.reduce(into: 0) { $0 += $1.elementDeleted.count }
+                let updated = changeset.reduce(into: 0) { $0 += $1.elementUpdated.count }
+                let moved = changeset.reduce(into: 0) { $0 += $1.elementMoved.count }
+                let inserted = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
 
-                Log4swift[Self.self].info("updates: '\(updates)' inserts: '\(insertions)' removes: '\(removals)' from rows: '\(rows.count)' completed in: '\(startDate.elapsedTime) ms'")
-                context.coordinator.rows = rows
-                if !tableView.reload(updates: updates, insertions: insertions, removals: removals) {
-                    tableView.reload(using: changeset, with: .effectFade) { _ in
-                        // meh we already did this
-                        // context.coordinator.rows = rows
+                Log4swift[Self.self].info("tag: '\(tagID)' deleted: '\(deleted)' updated: '\(updated)' moved: '\(moved)' inserted: '\(inserted)' from rows: '\(rows.count)' completed in: '\(startDate.elapsedTime) ms'")
+                if moved > 5 {
+                    // when moved is present the `reload(using:` behaves as if its
+                    // rotating over the horizontal axis
+                    // this is an attempt at fixing it
+                    // Klajd Deda, February 29, 2024
+                    //
+                    context.coordinator.rows = rows
+                    tableView.reloadData()
+                } else {
+                    tableView.reload(using: changeset, with: .effectFade) { data in
+                        context.coordinator.rows = data
                     }
                 }
             }
 
-            Log4swift[Self.self].info("reloadDataWithAnimations current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
+            Log4swift[Self.self].info("tag: '\(tagID)' reloadDataWithAnimations current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
             reloadDataWithAnimations()
 
             // preserve selection
@@ -284,7 +315,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 }
                 return
             }
-            Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
+            Log4swift[Self.self].debug("tag: '\(tagID)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
             tableView.reloadData(forRowIndexes: selectedRowIndexes, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
             tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
         } else if Int(abs(tableFrame.size.width - nsView.frame.size.width)) > 0 {
@@ -292,7 +323,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
 
-            Log4swift[Self.self].debug("tag: '\(self.tag)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
+            Log4swift[Self.self].debug("tag: '\(tagID)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         } else {
             // catch all, something changed, this is light weight anyhow
@@ -311,7 +342,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             // have to in order to avoid SwiftUI recursive complaint
             if Int(abs(tableFrame.size.width - nsView.frame.size.width)) > 0 {
                 self.tableFrame = nsView.frame
-                Log4swift[Self.self].debug("tag: '\(self.tag)' saved: '\(tableFrame)'")
+                Log4swift[Self.self].debug("tag: '\(tagID)' saved: '\(tableFrame)'")
             }
         }
     }
@@ -322,7 +353,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
      Gets called once per view "identity"
      */
     public func makeCoordinator() -> TableViewCoordinator<RowValue> {
-        Log4swift[Self.self].info("tag: '\(self.tag)'")
+        Log4swift[Self.self].info("tag: '\(tagID)'")
         return TableViewCoordinator(self, rows: rows)
     }
 
@@ -365,7 +396,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         guard let first = updated.first
         else {
             // should not get here
-            Log4swift[Self.self].error("tag: '\(self.tag)' found no match from: '\(sortDescriptors)'")
+            Log4swift[Self.self].error("tag: '\(tagID)' found no match from: '\(sortDescriptors)'")
             return }
 
         self.columnSort = first

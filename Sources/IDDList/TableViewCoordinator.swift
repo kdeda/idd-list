@@ -85,6 +85,14 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         return cell
     }
 
+    @objc private func updateSelection(_ selectedIndices: IndexSet) {
+        if selectedIndices.isEmpty {
+            parent.updateSelection(from: .init())
+        } else {
+            parent.updateSelection(from: selectedIndices)
+        }
+    }
+
     // MARK: - NSTableViewDelegate -
 
     public func tableViewSelectionDidChange(_ notification: Notification) {
@@ -97,13 +105,9 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         updateStatus = .fromCoordinator
         defer { updateStatus = .none }
 
-        let selectedIndices = tableView.selectedRowIndexes
-
-        if selectedIndices.isEmpty {
-            parent.updateSelection(from: .init())
-        } else {
-            parent.updateSelection(from: selectedIndices)
-        }
+        // avoid frequent calls
+        NSObject.cancelPreviousPerformRequests(withTarget: self)
+        perform(#selector(updateSelection), with: tableView.selectedRowIndexes, afterDelay: 0.1)
     }
 
     public func tableView(
