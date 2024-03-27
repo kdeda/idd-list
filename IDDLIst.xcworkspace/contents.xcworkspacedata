@@ -10,4 +10,7 @@
    <FileRef
       location = "group:Examples/TCATable/TCATable.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:Examples/CSVTable/CSVTable.xcodeproj">
+   </FileRef>
 </Workspace>

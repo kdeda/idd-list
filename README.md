@@ -12,9 +12,11 @@ However we have discovered that Array<V>.sort(by: keyPath) is 6 to 7 time slower
 
 There are 2 example target in the package. 
 
-**MacTableView** is build using Vanilla SwiftUI and 
+**MacTable** is build using Vanilla SwiftUI and 
 
-**TCATableView** is built using the TCA store from https://pointfree.co
+**TCATable** is built using the TCA store from https://pointfree.co
+
+**CSVTable** is built using the TCA store from https://pointfree.co
 
 https://user-images.githubusercontent.com/43558687/156873789-3e4217cd-548b-4a4c-858f-e173c35286f3.mov
 
