@@ -6,25 +6,22 @@
 //  Copyright (C) 1997-2023 id-design, inc. All rights reserved.
 //
 
+import ComposableArchitecture
+import CustomDump
+import Log4swift
+import IDDList
 import XCTest
 @testable import CSVTable
 
+@MainActor
 class CSVTableTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+        // Log4swift.configure(appName: "WhatSize")
+        // Log4swift[Self.self].info("\(String(repeating: "-", count: Bundle.main.appVersion.shortDescription.count))")
+        // Log4swift[Self.self].info("\(Bundle.main.appVersion.shortDescription)")
+        Log4swift[Self.self].info("\(String(repeating: "-", count: Bundle.main.appVersion.shortDescription.count))")
     }
 
     func testPerformanceExample() throws {
@@ -32,6 +29,84 @@ class CSVTableTests: XCTestCase {
         self.measure {
             // Put the code you want to measure the time of here.
         }
+    }
+
+    /**
+     Create a possible CSV
+     */
+    fileprivate func createCSVRows(rowCount: Int, columnCount: Int, separator: String) -> [CSVRow] {
+        var csvRows: [CSVRow] = (0 ..< rowCount).map { row in
+            let rowID = Int.random(in: ( 1968 ... 2068))
+
+            let columns: [String] = (0 ..< columnCount).map { column in
+                let columnID = Int.random(in: ( 1968 ... 2068))
+                let uuid = UUID().uuidString
+                let firstSpace = uuid.firstIndex(of: "-") ?? uuid.endIndex
+                let randomValue = uuid[...firstSpace]
+                let column = "\(columnID)-\(rowID)-\(randomValue)"
+
+                return column
+            }
+            return CSVRow.init(id: 0, columns: columns)
+        }
+
+        let columnNames: [String] = (0 ..< columnCount).map { "Column-\(String(format: "%03d", $0))" }
+        let header = CSVRow.init(id: 0, columns: columnNames)
+        csvRows.insert(header, at: 0)
+
+        csvRows.sort { $0.columns[0] > $1.columns[0] }
+        Log4swift[Self.self].info("created csv with: '\(csvRows.count) rows'")
+        return csvRows.updateIDs()
+    }
+
+    /**
+     Measure the folderURL and return an array of [NodeEntry]
+     */
+    fileprivate func testCSV(csvURL: URL, expectedRows: [CSVRow]) async throws -> Void {
+        Log4swift[Self.self].info("filePath: '\(csvURL.path)'")
+
+        let state = AppRoot.State()
+        let store = TestStore(initialState: state) {
+            AppRoot()
+        } withDependencies: {
+            $0.csvClient = .liveValue
+        }
+
+        store.exhaustivity = .off
+
+        Log4swift[Self.self].info("...")
+        await store.send(.load(csvURL))
+        await store.receive(\.fileDidLoad)
+        await store.receive(\.sortFiles)
+
+        var rows = store.state.rows
+        rows.sort { $0.columns[0] > $1.columns[0] }
+        Log4swift[Self.self].info("loaded csv file: '\(csvURL.path)' with: '\(rows.count) rows'")
+
+        if let deltas = diff(rows, expectedRows, format: .proportional) {
+            Log4swift[Self.self].info("changes: '\(deltas)'")
+        }
+
+        XCTAssertEqual(rows, expectedRows)
+    }
+
+    func testCSV1() async throws {
+        let separator = ","
+        let csvRows = createCSVRows(rowCount: 2, columnCount: 2, separator: separator)
+        let csvData = csvRows.csvData(separator: separator)
+        let csvURLRoot = URL.temporaryDirectory.appendingPathComponent("CSVTable")
+        let csvURL = csvURLRoot.appendingPathComponent("10x5.csv")
+
+        try? FileManager.default.createDirectory(at: csvURLRoot, withIntermediateDirectories: false)
+        try? csvData.write(to: csvURL)
+        Log4swift[Self.self].info("created csv file: '\(csvURL.path)' with: '\(csvRows.count) rows'")
+
+        // make sure file is there
+        XCTAssertEqual(csvURL.fileExist, true)
+        XCTAssertEqual(csvURL.logicalSize, Int64(csvData.count))
+
+        try await testCSV(csvURL: csvURL, expectedRows: csvRows)
+        Log4swift[Self.self].info("completed")
     }
 
 }

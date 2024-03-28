@@ -14,7 +14,6 @@
 		F3D182D127873B8A001377CC /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F3D182D027873B8A001377CC /* Preview Assets.xcassets */; };
 		F3D182DC27873B8A001377CC /* CSVTableTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D182DB27873B8A001377CC /* CSVTableTests.swift */; };
 		F3D182E627873B8A001377CC /* CSVTableUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D182E527873B8A001377CC /* CSVTableUITests.swift */; };
-		F3D182E827873B8A001377CC /* CSVTableUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D182E727873B8A001377CC /* CSVTableUITestsLaunchTests.swift */; };
 		F3D182FA27873C39001377CC /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = F3D182F927873C39001377CC /* ComposableArchitecture */; };
 		F3D182FC27873C46001377CC /* AppRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D182FB27873C46001377CC /* AppRoot.swift */; };
 		F3D182FE27873CA1001377CC /* CSVRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D182FD27873CA1001377CC /* CSVRow.swift */; };
@@ -50,7 +49,6 @@
 		F3D182DB27873B8A001377CC /* CSVTableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVTableTests.swift; sourceTree = "<group>"; };
 		F3D182E127873B8A001377CC /* CSVTableUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CSVTableUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3D182E527873B8A001377CC /* CSVTableUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVTableUITests.swift; sourceTree = "<group>"; };
-		F3D182E727873B8A001377CC /* CSVTableUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVTableUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		F3D182FB27873C46001377CC /* AppRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoot.swift; sourceTree = "<group>"; };
 		F3D182FD27873CA1001377CC /* CSVRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVRow.swift; sourceTree = "<group>"; };
 		F3FD827B29142DD800C4DB22 /* CSVClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVClient.swift; sourceTree = "<group>"; };
@@ -139,7 +137,6 @@
 			isa = PBXGroup;
 			children = (
 				F3D182E527873B8A001377CC /* CSVTableUITests.swift */,
-				F3D182E727873B8A001377CC /* CSVTableUITestsLaunchTests.swift */,
 			);
 			path = CSVTableUITests;
 			sourceTree = "<group>";
@@ -321,7 +318,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F3D182E827873B8A001377CC /* CSVTableUITestsLaunchTests.swift in Sources */,
 				F3D182E627873B8A001377CC /* CSVTableUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -527,7 +523,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = ME637H7ZM9;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.id-design.CSVTableTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -547,7 +543,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = ME637H7ZM9;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.id-design.CSVTableTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -66,23 +66,25 @@ struct AppRootView: View {
                 Column(store.columns[columnIndex], id: store.columns[columnIndex]) { rowValue in
                     Text(rowValue[dynamicMember: "\(columnIndex)"])
                 }
-                // .columnSort(compare: { $0[dynamicMember: column] < $1[dynamicMember: column] })
+                .columnSort(compare: { $0.compareByColumIndex($1, columnIndex: columnIndex) })
                 .frame(minWidth: 180, ideal: 180, maxWidth: 280)
             }
 
-//            Column("Column1", id: "column1") { rowValue in
-//                Text(rowValue.column1)
-//                    .font(.subheadline)
-//            }
-//            .frame(width: 130, alignment: .trailing)
-//            .columnSort(compare: { $0.column1 < $1.column1 })
-//
-//            Column("Column2", id: "column2") { rowValue in
-//                Text(rowValue.column2)
-//                    .font(.subheadline)
-//            }
-//            .frame(minWidth: 180, maxWidth: .infinity)
-//            .columnSort(compare: { $0.column2 < $1.column2 })
+            // declare columns in usual fashion
+            //
+            //  Column("Column1", id: "column1") { rowValue in
+            //      Text(rowValue.column1)
+            //          .font(.subheadline)
+            //  }
+            //  .frame(width: 130, alignment: .trailing)
+            //  .columnSort(compare: { $0.column1 < $1.column1 })
+            //
+            //  Column("Column2", id: "column2") { rowValue in
+            //      Text(rowValue.column2)
+            //          .font(.subheadline)
+            //  }
+            //  .frame(minWidth: 180, maxWidth: .infinity)
+            //  .columnSort(compare: { $0.column2 < $1.column2 })
         }
         .introspect { tableView, scrollView in
             tableView.intercellSpacing = .init(width: 10, height: 1)

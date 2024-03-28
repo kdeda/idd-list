@@ -11,7 +11,6 @@ import Combine
 import ComposableArchitecture
 import Log4swift
 import IDDList
-import SwiftUI
 
 @Reducer
 struct AppRoot {
@@ -70,7 +69,7 @@ struct AppRoot {
         case appDidStart
         case setDragInProgress(Bool)
         case selectedRowsDidChange([CSVRow])
-        case sortFiles(ColumnSort<CSVRow>)
+        case sortFiles
         case cancelLoad
         case load(URL)
         case appendRows([CSVRow])
@@ -97,7 +96,7 @@ struct AppRoot {
                 return .none
 
             case .binding(\.columnSort):
-                return .send(.sortFiles(state.columnSort))
+                return .send(.sortFiles)
 
             case .binding:
                 return .none
@@ -119,8 +118,8 @@ struct AppRoot {
                 state.selectedRows = Set(newValue.map(\.id))
                 return .none
 
-            case let .sortFiles(columnSort):
-                state.rows.sort(by: columnSort.comparator)
+            case .sortFiles:
+                state.rows.sort(by: state.columnSort.comparator)
                 return .none
 
             case .cancelLoad:
@@ -158,6 +157,7 @@ struct AppRoot {
                         let columnCount = last.columns.count
                         if let columnNames = newRows.first(where: { $0.columns.count == columnCount}) {
                             state.columns = columnNames.columns
+                            state.columnSort = .init(ascending: false, columnID: columnNames.columns[0])
                         }
                     }
                 }
@@ -175,7 +175,7 @@ struct AppRoot {
                 Log4swift[Self.self].info("load: '\(fileURL.path)'")
 
                 state.dropStatus = .loaded(fileURL)
-                return .send(.sortFiles(state.columnSort))
+                return .send(.sortFiles)
 
             }
         }
