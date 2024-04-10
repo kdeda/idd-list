@@ -1,4 +1,4 @@
-# IDDList
+# IDDList, a custom TableView for macOS
 
 This is an effort at a more flexible replacement to SwiftUI.List
 A huge benefit is access to source code so one can learn and extend this component.
