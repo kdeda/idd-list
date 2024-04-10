@@ -12,7 +12,8 @@ import Log4swift
 @main
 struct MacTableApp: App {
     init() {
-        Log4swift.configure(appName: "MacTableApp")
+        let logRootURL = URL.home.appendingPathComponent("Library/Logs/MacTableApp")
+        Log4swift.configure(fileLogConfig: try? .init(logRootURL: logRootURL, appPrefix: "MacTableApp", appSuffix: "", daysToKeep: 30))
         Log4swift[Self.self].info("Starting ...")
     }
 

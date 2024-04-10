@@ -15,7 +15,8 @@ struct CSVTableApp: App {
     let store: StoreOf<AppRoot>
 
     init() {
-        Log4swift.configure(appName: "CSVTableApp")
+        let logRootURL = URL.home.appendingPathComponent("Library/Logs/CSVTableApp")
+        Log4swift.configure(fileLogConfig: try? .init(logRootURL: logRootURL, appPrefix: "CSVTableApp", appSuffix: "", daysToKeep: 30))
         Log4swift[Self.self].info("Starting ...")
         
         self.store = Store(

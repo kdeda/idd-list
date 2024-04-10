@@ -15,7 +15,8 @@ struct TCATableApp: App {
     let store: StoreOf<AppRoot>
 
     init() {
-        Log4swift.configure(appName: "TCATableApp")
+        let logRootURL = URL.home.appendingPathComponent("Library/Logs/TCATableApp")
+        Log4swift.configure(fileLogConfig: try? .init(logRootURL: logRootURL, appPrefix: "TCATableApp", appSuffix: "", daysToKeep: 30))
         Log4swift[Self.self].info("Starting ...")
         
         self.store = Store(

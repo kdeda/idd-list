@@ -11,12 +11,6 @@ import AppKit
 import SwiftUI
 import Log4swift
 
-enum UpdateSource {
-    case none
-    case fromNSView
-    case fromCoordinator
-}
-
 public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
 where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 {
@@ -25,6 +19,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     // IDDList.updateNSView
     var parent: IDDList<RowValue>
     var updateStatus: UpdateSource = .none
+    var tagID: String = ""
 
     public init(
         _ parent: IDDList<RowValue>,
@@ -85,29 +80,35 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         return cell
     }
 
-    @objc private func updateSelection(_ selectedIndices: IndexSet) {
-        if selectedIndices.isEmpty {
-            parent.updateSelection(from: .init())
-        } else {
-            parent.updateSelection(from: selectedIndices)
-        }
-    }
-
     // MARK: - NSTableViewDelegate -
 
+    /**
+     Push changes back into the model
+     */
     public func tableViewSelectionDidChange(_ notification: Notification) {
         guard let tableView = notification.object as? TableView<RowValue>,
               !rows.isEmpty
-        else { return }
+        else {
+            Log4swift[Self.self].error("tagID: '\(tagID)' no rows ...")
+            return
+        }
 
-        guard updateStatus != .fromNSView
-        else { return }
+        guard updateStatus != .fromUpdateNSView
+        else {
+            Log4swift[Self.self].error("tagID: '\(tagID)' ignoring fromUpdateNSView")
+            return
+        }
         updateStatus = .fromCoordinator
         defer { updateStatus = .none }
 
+        parent.updateSelection(from: tableView.selectedRowIndexes)
+
         // avoid frequent calls
-        NSObject.cancelPreviousPerformRequests(withTarget: self)
-        perform(#selector(updateSelection), with: tableView.selectedRowIndexes, afterDelay: 0.1)
+        // i suspect this makes no sense any longer,
+        // Klajd Deda, September 20, 2024
+        // let selectedIndices: IndexSet = tableView.selectedRowIndexes
+        // NSObject.cancelPreviousPerformRequests(withTarget: self)
+        // perform(#selector(updateSelection(from:)), with: selectedIndices, afterDelay: 0.1)
     }
 
     public func tableView(

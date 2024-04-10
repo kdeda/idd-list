@@ -641,7 +641,7 @@
 			requirement = {
 				kind = versionRange;
 				maximumVersion = 3.0.0;
-				minimumVersion = 2.0.0;
+				minimumVersion = 2.3.7;
 			};
 		};
 		F3D182F827873C39001377CC /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
@@ -649,7 +649,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.9.0;
+				minimumVersion = 1.15.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

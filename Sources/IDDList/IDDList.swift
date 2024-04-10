@@ -40,7 +40,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     @State private var tableFrame: CGRect = .zero
     var tagID: String = ""
 
-    private var selectedRows: IndexSet {
+    private var modelIndexes: IndexSet {
         let indexArray: [Int] = {
             switch selectionType {
             case .single:
@@ -56,35 +56,6 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         }()
 
         return IndexSet(indexArray)
-    }
-
-    private func buildTableView() -> TableView<RowValue> {
-        let rv = TableView<RowValue>(columns: columns)
-
-        rv.allowsMultipleSelection = selectionType == .multiple
-        // data source
-        rv.axes = [.horizontal, .vertical]
-        rv.sortDescriptors = [columnSort].compactMap(NSSortDescriptor.init)
-        rv.tagID = tagID
-
-        return rv
-    }
-
-    private func buildScrollView(tableView: TableView<RowValue>) -> TableScrollView<RowValue> {
-        let rv = TableScrollView<RowValue>(tableView: tableView)
-
-        rv.translatesAutoresizingMaskIntoConstraints = false // has no effect?
-        // we want the gutters to always show
-        rv.autohidesScrollers = false
-        rv.hasVerticalScroller = true
-        rv.hasHorizontalScroller = false
-
-        // prevent glitchy behavior when axes are constrained
-        rv.verticalScrollElasticity = .automatic // scrollAxes.contains(.vertical) ? .automatic : .none
-        rv.horizontalScrollElasticity = .none // scrollAxes.contains(.horizontal) ? .automatic : .none
-
-        rv.documentView = tableView
-        return rv
     }
 
     // MARK: - Introspection -
@@ -155,12 +126,44 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 
     // MARK: - NSViewRepresentable overrides -
 
+    private func makeTableView() -> TableView<RowValue> {
+        let rv = TableView<RowValue>(
+            columns: columns,
+            makeFirstResponder: $makeFirstResponder
+        )
+
+        rv.allowsMultipleSelection = selectionType == .multiple
+        // data source
+        rv.axes = [.horizontal, .vertical]
+        rv.sortDescriptors = [columnSort].compactMap(NSSortDescriptor.init)
+        rv.tagID = tagID
+
+        return rv
+    }
+
+    private func makeScrollView(tableView: TableView<RowValue>) -> TableScrollView<RowValue> {
+        let rv = TableScrollView<RowValue>(tableView: tableView)
+
+        rv.translatesAutoresizingMaskIntoConstraints = false // has no effect?
+        // we want the gutters to always show
+        rv.autohidesScrollers = false
+        rv.hasVerticalScroller = true
+        rv.hasHorizontalScroller = false
+
+        // prevent glitchy behavior when axes are constrained
+        rv.verticalScrollElasticity = .automatic // scrollAxes.contains(.vertical) ? .automatic : .none
+        rv.horizontalScrollElasticity = .none // scrollAxes.contains(.horizontal) ? .automatic : .none
+
+        rv.documentView = tableView
+        return rv
+    }
+
     /**
      Gets called once per view "identity"
      */
     public func makeNSView(context: Context) -> TableScrollView<RowValue> {
-        let tableView = buildTableView()
-        let scrollView = buildScrollView(tableView: tableView)
+        let tableView = makeTableView()
+        let scrollView = makeScrollView(tableView: tableView)
 
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
@@ -191,65 +194,88 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         }
 
         Log4swift[Self.self].info("tagID: '\(tagID)'")
+        Log4swift[Self.self].debug("tagID: '\(tagID)' tableView: '\(tableView)'")
         return scrollView
     }
 
     /**
-     Return true if the selection in our view does not match the selection binding.
-     */
-    private func selectionHasChanged(_ tableView: TableView<RowValue>) -> Bool {
-        let selectedRowIndexes = tableView.selectedRowIndexes
+     Attempt at handling push changes from the model and making sure the view agrees with it.
 
-        switch selectionType {
-        case .single:
-            let existing = selectedRowIndexes.map { rows[$0].id }.first
-            return singleSelection != existing
-        case .multiple:
-            let existing = Set(selectedRowIndexes.map { rows[$0].id })
-            return multipleSelection != existing
-        }
-    }
-
-    /**
-     Return the rows we shall select, derived from the selection binding.
+     Return the array of rowIDs if the selection in our view does not match the
+     selection from the model/binding.
+     We should than push these new values into the model right after updating the ui
      */
-    private func selectedIndexes() -> IndexSet {
-        switch selectionType {
-        case .single:
-            if let existing = rows.firstIndex(where: { $0.id == singleSelection}) {
-                return IndexSet([existing])
-            }
-            return IndexSet()
-        case .multiple:
-            let rows = rows.enumerated()
-                .filter { multipleSelection.contains($0.element.id) }
-                .map(\.offset)
-            return IndexSet(rows)
+    private func modelHasChanged(_ tableView: TableView<RowValue>) -> IndexSet? {
+        let tableIndexes = tableView.selectedRowIndexes
+        let modelIndexes: IndexSet = modelIndexes
+
+        if tableIndexes != modelIndexes {
+            Log4swift[Self.self].debug("tagID: '\(tagID)' detected changes in the selection binding")
+            Log4swift[Self.self].debug("tagID: '\(tagID)' tableIndexes: rows: '\(tableIndexes.map(\.description).joined(separator: ", "))'")
+            Log4swift[Self.self].debug("tagID: '\(tagID)' modelIndexes: rows: '\(modelIndexes.map(\.description).joined(separator: ", "))'")
+            return modelIndexes
         }
+        return .none
     }
 
     /**
      Gets called whenever `model` changes. So probably frequently
+     Be ware that this is the push from the model to the UI.
+     When UI changes due to human interaction, say user clicks and selects a row we should
+     push upstream from the updateSelection
      */
     public func updateNSView(_ nsView: TableScrollView<RowValue>, context: Context) {
         guard context.coordinator.updateStatus != .fromCoordinator
-        else { return }
-        context.coordinator.updateStatus = .fromNSView
+        else {
+            Log4swift[Self.self].error("tagID: '\(tagID)' ignoring fromCoordinator")
+            return
+        }
+        context.coordinator.updateStatus = .fromUpdateNSView
         defer { context.coordinator.updateStatus = .none }
 
         let tableView = nsView.tableView
         context.coordinator.parent = self
-        let isFirstResponder = tableView.window?.firstResponder == tableView
 
-        Log4swift[Self.self].debug("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' isFirstResponder: '\(isFirstResponder)'")
-        if makeFirstResponder && !isFirstResponder {
-            /**
-             We are told to become firstResponder, so we can handle key events.
-             We need to do this once, so we relinquish the makeFirstResponder by setting it to false
-             */
-            Log4swift[Self.self].info("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)'")
-            makeFirstResponder = false
-            tableView.window?.makeFirstResponder(tableView)
+        // Log4swift[Self.self].debug("tagID: '\(tagID)'")
+        /**
+         This code reacts to pushes from the model to change the makeFirstResponder/resignFirstResponder
+         The changes from the other way are in the TableView.becomeFirstResponder, TableView.resignFirstResponder
+         We will care about the case where makeFirstResponder is true, the resignation is automatic.
+         */
+        if let window = NSApplication.shared.keyWindow,
+           let ourWindow = tableView.window,
+           window == ourWindow {
+            // we have to do this dance
+            // or else cocoa will barf
+            // window.firstResponder should match our instance of tableView
+            let isFirstResponder = window.firstResponder == tableView
+
+            // Log4swift[Self.self].debug("tagID: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' isFirstResponder: '\(isFirstResponder)'")
+            // Log4swift[Self.self].debug("tagID: '\(tagID)' firstResponder: '\(window.firstResponder)'")
+            // Log4swift[Self.self].debug("tagID: '\(tagID)' tableView: '\(tableView)'")
+            if makeFirstResponder && !isFirstResponder {
+                /**
+                 We are told to become firstResponder, so we can handle key events.
+                 We need to do this once, so we relinquish the makeFirstResponder by setting it to false
+                 */
+                Log4swift[Self.self].debug("tagID: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)'")
+                Log4swift[Self.self].debug("tagID: '\(tagID)' window: '\(window)'")
+                let result = window.makeFirstResponder(tableView)
+
+                if !result {
+                    Log4swift[Self.self].error("tagID: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' failed")
+                    Log4swift[Self.self].error("tagID: '\(tagID)' ----------------------")
+                }
+
+                //  } else if !makeFirstResponder && isFirstResponder {
+                //      Log4swift[Self.self].debug("tagID: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)'")
+                //      let result = tableView.resignFirstResponder()
+                //
+                //      if !result {
+                //          Log4swift[Self.self].error("tagID: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' failed")
+                //          Log4swift[Self.self].error("tagID: '\(tagID)' ----------------------")
+                //      }
+            }
         }
 
         if context.coordinator.rows != rows {
@@ -276,7 +302,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 let moved = changeset.reduce(into: 0) { $0 += $1.elementMoved.count }
                 let inserted = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
 
-                Log4swift[Self.self].info("tag: '\(tagID)' deleted: '\(deleted)' updated: '\(updated)' moved: '\(moved)' inserted: '\(inserted)' from rows: '\(rows.count)' completed in: '\(startDate.elapsedTime) ms'")
+                Log4swift[Self.self].info("tagID: '\(tagID)' deleted: '\(deleted)' updated: '\(updated)' moved: '\(moved)' inserted: '\(inserted)' from rows: '\(rows.count)' completed in: '\(startDate.elapsedTime) ms'")
                 if moved > 5 {
                     // when moved is present the `reload(using:` behaves as if its
                     // rotating over the horizontal axis
@@ -292,38 +318,22 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 }
             }
 
-            Log4swift[Self.self].info("tag: '\(tagID)' reloadDataWithAnimations current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
+            Log4swift[Self.self].info("tagID: '\(tagID)' reloadDataWithAnimations current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
             reloadDataWithAnimations()
 
             // preserve selection
-            let selectedRowIndexes = selectedIndexes()
-            tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
-        } else if selectionHasChanged(tableView) {
-            // the binding and the ui do not agree on the selection
-            // the binding shall to drive the ui
-            let selectedRowIndexes = selectedIndexes()
-            
-            if selectedRowIndexes.isEmpty {
-                tableView.deselectAll(nil)
-                DispatchQueue.main.async {
-                    /**
-                     If we have no selection, so we should have no highlights.
-                     But somehow i'm not able to trigger the un-highlight when the selection is set to emtpy
-                     The reload will do it, but it might cause a slight flicker
-                     */
-                    tableView.reloadVisibleRows()
-                }
-                return
-            }
-            Log4swift[Self.self].debug("tag: '\(tagID)' detected changes in the selection binding, selecting: 'rows \(selectedRowIndexes.map(\.description).joined(separator: ", "))'")
-            tableView.reloadData(forRowIndexes: selectedRowIndexes, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
-            tableView.selectRowIndexes(selectedRowIndexes, byExtendingSelection: false)
+            tableView.selectRowIndexes(modelIndexes, byExtendingSelection: false)
+        } else if let selection = modelHasChanged(tableView) {
+            tableView.reloadData(forRowIndexes: selection, columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
+            tableView.selectRowIndexes(selection, byExtendingSelection: false)
+
+            self.updateSelection(from: selection, forcePush: true)
         } else if Int(abs(tableFrame.size.width - nsView.frame.size.width)) > 0 {
             // the view was resized, reload visible rows and remember the new size
             let visibleRows = tableView.rows(in: tableView.visibleRect)
             let updatedRowIndexes = (0 ..< visibleRows.length).map { visibleRows.location + $0 }
 
-            Log4swift[Self.self].debug("tag: '\(tagID)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
+            Log4swift[Self.self].debug("tagID: '\(tagID)' detected changes in the tableView width, saved: '\(tableFrame)' current: '\(tableView.frame)'")
             tableView.reloadData(forRowIndexes: IndexSet(updatedRowIndexes), columnIndexes: IndexSet(0 ..< tableView.tableColumns.count))
         } else {
             // catch all, something changed, this is light weight anyhow
@@ -342,7 +352,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
             // have to in order to avoid SwiftUI recursive complaint
             if Int(abs(tableFrame.size.width - nsView.frame.size.width)) > 0 {
                 self.tableFrame = nsView.frame
-                Log4swift[Self.self].debug("tag: '\(tagID)' saved: '\(tableFrame)'")
+                Log4swift[Self.self].debug("tagID: '\(tagID)' saved: '\(tableFrame)'")
             }
         }
     }
@@ -351,25 +361,44 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     
     /**
      Gets called once per view "identity"
+     This will be the tableview's delegate and data source
      */
     public func makeCoordinator() -> TableViewCoordinator<RowValue> {
-        Log4swift[Self.self].info("tag: '\(tagID)'")
-        return TableViewCoordinator(self, rows: rows)
+        let rv = TableViewCoordinator(self, rows: rows)
+
+        rv.tagID = tagID
+        return rv
     }
 
     // MARK: - Helpers -
 
     /**
-     Convenience, Called from the Coordinator since we manage the state
+     Push changes into the model
+     Could be called more than once from the TableViewCoordinator or indirectly from TableView
+     Avoid pushing if there are no changes.
      */
-    func updateSelection(from indices: IndexSet) {
+    internal func updateSelection(from indices: IndexSet, forcePush: Bool = false) {
+        Log4swift[Self.self].debug("tagID: '\(tagID)'")
+        Log4swift[Self.self].debug("tagID: '\(tagID)' -------------------------------------")
+        Log4swift[Self.self].debug("tagID: '\(tagID)' newSelection: '\(indices.map({ rows[$0].id }))'")
+        Log4swift[Self.self].debug("tagID: '\(tagID)' forcePush: '\(forcePush)'")
+
         switch selectionType {
         case .single:
             let indices = Set(indices.map { rows[$0].id })
-            singleSelection = indices.first
+
+            if forcePush || singleSelection != indices.first {
+                Log4swift[Self.self].debug("tagID: '\(tagID)' existing singleSelection: '\(indices)'")
+                singleSelection = indices.first
+            }
+
         case .multiple:
             let indices = Set(indices.map { rows[$0].id })
-            multipleSelection = indices
+
+            if forcePush || multipleSelection != indices {
+                Log4swift[Self.self].debug("tagID: '\(tagID)' existing multipleSelection: '\(multipleSelection)'")
+                multipleSelection = indices
+            }
         }
     }
 
@@ -396,7 +425,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         guard let first = updated.first
         else {
             // should not get here
-            Log4swift[Self.self].error("tag: '\(tagID)' found no match from: '\(sortDescriptors)'")
+            Log4swift[Self.self].error("tagID: '\(tagID)' found no match from: '\(sortDescriptors)'")
             return }
 
         self.columnSort = first
