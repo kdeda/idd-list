@@ -9,12 +9,12 @@
 import AppKit
 import SwiftUI
 
-public typealias ColumnSortCompare<RowValue> = (_ lhs: RowValue, _ rhs: RowValue) -> Bool
+public typealias ColumnSortCompare<RowValue> = @Sendable (_ lhs: RowValue, _ rhs: RowValue) -> Bool
 
 /// Models the column sort implementation for a particular List column
 /// We wanted to use KeyPaths for this and avoid introducing an extra generic for the value
 /// The solution here is type erasure. We collect the strong type upon init, but than we earse it
-public struct ColumnSort<RowValue> where RowValue: Equatable {
+public struct ColumnSort<RowValue> where RowValue: Equatable, RowValue: Sendable {
     internal var compare: ColumnSortCompare<RowValue>
     public var ascending = false
     public let columnID: NSUserInterfaceItemIdentifier
@@ -47,6 +47,9 @@ extension ColumnSort: Equatable {
     }
 }
 
+extension ColumnSort: Sendable {
+}
+
 /**
  Helper struct to save/load a column sort meta data from UserDefaults
 
@@ -71,7 +74,7 @@ extension ColumnSort: Equatable {
  }
  ```
  */
-public struct ColumnSortPersistence: Equatable, Codable {
+public struct ColumnSortPersistence: Equatable, Codable, Sendable {
     public let ascending: Bool
     public let columnID: String
 

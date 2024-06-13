@@ -239,17 +239,28 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 
         let tableView = nsView.tableView
         context.coordinator.parent = self
-        let isFirstResponder = tableView.window?.firstResponder == tableView
 
-        Log4swift[Self.self].debug("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' isFirstResponder: '\(isFirstResponder)'")
-        if makeFirstResponder && !isFirstResponder {
-            /**
-             We are told to become firstResponder, so we can handle key events.
-             We need to do this once, so we relinquish the makeFirstResponder by setting it to false
-             */
-            Log4swift[Self.self].info("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)'")
-            makeFirstResponder = false
-            tableView.window?.makeFirstResponder(tableView)
+        if let window = NSApplication.shared.keyWindow,
+           let ourWindow = tableView.window,
+           window == ourWindow {
+            // we have to do this dance
+            // or else cocoa will barf
+            let isFirstResponder = window.firstResponder == tableView
+
+            Log4swift[Self.self].debug("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' isFirstResponder: '\(isFirstResponder)'")
+            if makeFirstResponder && !isFirstResponder {
+                /**
+                 We are told to become firstResponder, so we can handle key events.
+                 We need to do this once, so we relinquish the makeFirstResponder by setting it to false
+                 */
+                Log4swift[Self.self].info("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)'")
+                makeFirstResponder = false
+                let result = window.makeFirstResponder(tableView)
+                if !result {
+                    Log4swift[Self.self].error("tag: '\(tagID)' makeFirstResponder: '\(makeFirstResponder)' failed")
+                    Log4swift[Self.self].error("tag: '\(tagID)' ----------------------")
+                }
+            }
         }
 
         if context.coordinator.rows != rows {
