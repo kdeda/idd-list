@@ -16,6 +16,21 @@ where RowValue: Identifiable, RowValue: Equatable
     public var axes: Axis.Set = [.horizontal, .vertical]
     var tagID: String = ""
 
+    /**
+     Default value does nothing.
+     You can set this value during the implementation of your .introspect
+     ```
+     .introspect { tableView, scrollView in
+         tableView.intercellSpacing = .init(width: 10, height: 0)
+         tableView.usesAlternatingRowBackgroundColors = true
+         tableView.doubleClick = {
+             store.send(.doubleClick($0))
+         }
+     }
+     ```
+     */
+    public var doubleClick: (_ selectedRowIndexes: IndexSet) -> Void = { _ in }
+
     init(columns: [Column<RowValue>]) {
         super.init(frame: .zero)
 
@@ -46,6 +61,7 @@ where RowValue: Identifiable, RowValue: Equatable
 
         self.sortDescriptors = columns.compactMap(\.sortDescriptor)
         self.rowHeight = 22.0
+        self.doubleAction = #selector(doubleActionIMP(_:))
 
         Log4swift[Self.self].debug("created: '\(self.sortDescriptors)'")
     }
@@ -90,6 +106,10 @@ where RowValue: Identifiable, RowValue: Equatable
     public override func resignFirstResponder() -> Bool {
         Log4swift[Self.self].debug("tag: '\(tagID)'")
         return super.resignFirstResponder()
+    }
+
+    @objc private func doubleActionIMP(_ sender: Any) {
+        doubleClick(self.selectedRowIndexes)
     }
 }
 
