@@ -20,7 +20,8 @@ struct AppRoot {
         var id = UUID()
         var isAppReady = false
         var files: [File] = []
-        var rootURL = URL(fileURLWithPath: "/Volumes/Vault/Library/FoldersWithLotsOfFiles/18000 files") // NSHomeDirectory())
+        // var rootURL = URL(fileURLWithPath: "/Volumes/Vault/Library/FoldersWithLotsOfFiles/18000 files")
+        var rootURL = URL(fileURLWithPath: NSHomeDirectory())
         var lastBatch = 0
         @BindingState var selectedFiles: Set<File.ID> = []
         @BindingState var columnSort: ColumnSort<File> = .init(ascending: false, columnID: "fileName")
