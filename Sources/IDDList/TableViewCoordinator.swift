@@ -3,7 +3,7 @@
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
-//  Copyright (C) 1997-2023 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2024 id-design, inc. All rights reserved.
 //
 
 import Foundation
@@ -121,6 +121,14 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         else { return nil }
 
         return self.createCellView(tableView: tableView, tableColumn: tableColumn, column: column, row: row)
+    }
+
+    public func tableView(
+        _ tableView: NSTableView,
+        heightOfRow: Int
+    ) -> CGFloat {
+        let rowValue = rows[heightOfRow].value
+        return parent.heightOfRow(rowValue)
     }
 
     @MainActor public func tableView(

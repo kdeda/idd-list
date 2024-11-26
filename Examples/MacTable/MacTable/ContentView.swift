@@ -3,7 +3,7 @@
 //  MacTable
 //
 //  Created by Klajd Deda on 01/05/23.
-//  Copyright (C) 1997-2023 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2024 id-design, inc. All rights reserved.
 //
 
 import SwiftUI
@@ -128,6 +128,12 @@ struct ContentView: View {
                 .columnSort(compare: { $0.category < $1.category })
                 .frame(minWidth: 180, ideal: 200, maxWidth: .infinity)
             }
+            .heightOfRow({ rowValue in
+                if rowValue.year == 2018 {
+                    return 22.0
+                }
+                return 32.0
+            })
             .id(showExtraColumn ? "showExtraColumn=true" : "showExtraColumn=false")
         }
         .frame(minWidth: 680, minHeight: 480)

@@ -3,7 +3,7 @@
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
-//  Copyright (C) 1997-2023 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2024 id-design, inc. All rights reserved.
 //
 
 import AppKit
@@ -66,7 +66,8 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
     ) -> Void
     
     internal var introspectBlocks: [IntrospectBlock] = []
-    
+    internal var heightOfRow: (_ rowValue: RowValue) -> CGFloat = { _ in 22.0 }
+
     // MARK: - Init -
 
     /**
@@ -446,6 +447,14 @@ extension IDDList {
     ) -> Self {
         var copy = self
         copy.introspectBlocks.append(block)
+        return copy
+    }
+    
+    /// Height of row
+    public func heightOfRow(_ heightOfRow: @escaping (_ rowValue: RowValue) -> CGFloat) -> Self {
+        var copy = self
+
+        copy.heightOfRow = heightOfRow
         return copy
     }
 }

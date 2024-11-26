@@ -3,7 +3,7 @@
 //  TCATableTests
 //
 //  Created by Klajd Deda on 12/27/21.
-//  Copyright (C) 1997-2023 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2024 id-design, inc. All rights reserved.
 //
 
 import XCTest
