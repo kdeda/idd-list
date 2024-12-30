@@ -95,7 +95,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
 
         guard updateStatus != .fromUpdateNSView
         else {
-            Log4swift[Self.self].error("tagID: '\(tagID)' ignoring fromUpdateNSView")
+            Log4swift[Self.self].debug("tagID: '\(tagID)' ignoring fromUpdateNSView")
             return
         }
         updateStatus = .fromCoordinator
