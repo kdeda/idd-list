@@ -3,7 +3,7 @@
 //  IDDList
 //
 //  Created by Klajd Deda on 01/05/23.
-//  Copyright (C) 1997-2024 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2025 id-design, inc. All rights reserved.
 //
 
 import AppKit
@@ -303,7 +303,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 let moved = changeset.reduce(into: 0) { $0 += $1.elementMoved.count }
                 let inserted = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
 
-                Log4swift[Self.self].info("tagID: '\(tagID)' deleted: '\(deleted)' updated: '\(updated)' moved: '\(moved)' inserted: '\(inserted)' from rows: '\(rows.count)' elapsedTime: '\(startDate.elapsedTime) ms'")
+                Log4swift[Self.self].info("tagID: '\(tagID)' deleted: '\(deleted)' updated: '\(updated)' moved: '\(moved)' inserted: '\(inserted)' from rows: '\(rows.count)' elapsedTime: '\(startDate.elapsedTime)'")
                 if moved > 5 {
                     // when moved is present the `reload(using:` behaves as if its
                     // rotating over the horizontal axis

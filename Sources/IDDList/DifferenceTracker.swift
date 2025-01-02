@@ -3,7 +3,7 @@
 //  IDDList
 //
 //  Created by Klajd Deda on 9/18/23.
-//  Copyright (C) 1997-2024 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2025 id-design, inc. All rights reserved.
 //
 //  From https://stackoverflow.com/questions/61469329/applying-collectiondifference-to-nstableview
 //
