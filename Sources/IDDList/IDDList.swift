@@ -303,7 +303,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 let moved = changeset.reduce(into: 0) { $0 += $1.elementMoved.count }
                 let inserted = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
 
-                Log4swift[Self.self].info("tagID: '\(tagID)' deleted: '\(deleted)' updated: '\(updated)' moved: '\(moved)' inserted: '\(inserted)' from rows: '\(rows.count)' elapsedTime: '\(startDate.elapsedTime)'")
+                Log4swift[Self.self].info("tagID: '\(tagID)' deleted: '\(deleted.decimalFormatted)' updated: '\(updated.decimalFormatted)' moved: '\(moved.decimalFormatted)' inserted: '\(inserted.decimalFormatted)' from rows: '\(rows.count.decimalFormatted)' elapsedTime: '\(startDate.elapsedTime)'")
                 if moved > 5 {
                     // when moved is present the `reload(using:` behaves as if its
                     // rotating over the horizontal axis
@@ -319,7 +319,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 }
             }
 
-            Log4swift[Self.self].debug("tagID: '\(tagID)' reloadDataWithAnimations current: '\(context.coordinator.rows.count) rows' incomming: '\(rows.count) rows'")
+            Log4swift[Self.self].debug("tagID: '\(tagID)' reloadDataWithAnimations current: '\(context.coordinator.rows.count.decimalFormatted) rows' incomming: '\(rows.count.decimalFormatted) rows'")
             reloadDataWithAnimations()
 
             // preserve selection
