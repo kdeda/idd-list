@@ -12,7 +12,7 @@ import SwiftUI
 import Log4swift
 
 public final class TableViewCoordinator<RowValue>: NSObject, NSTableViewDelegate, NSTableViewDataSource
-where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
+where RowValue: Identifiable, RowValue: Hashable, RowValue: Equatable, RowValue: Sendable
 {
     var rows: [TableRowValue<RowValue>]
     // this reference is update each time a new parent is created
@@ -29,6 +29,7 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
         self.rows = rows
     }
 
+    @MainActor
     private func createCellView(
         tableView: NSTableView,
         tableColumn: NSTableColumn,

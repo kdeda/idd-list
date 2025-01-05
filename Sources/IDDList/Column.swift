@@ -10,8 +10,8 @@ import AppKit
 import SwiftUI
 import Log4swift
 
-public struct Column<RowValue>: Equatable
-where RowValue: Identifiable, RowValue: Equatable
+public struct Column<RowValue>: Equatable, Sendable
+where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
 {
     public static func == (lhs: Column<RowValue>, rhs: Column<RowValue>) -> Bool {
         lhs.title == rhs.title
@@ -42,14 +42,17 @@ where RowValue: Identifiable, RowValue: Equatable
 
     var width: WidthType = .fixed(10)
     var columnSort: ColumnSort<RowValue>
-    var cellView: (_ item: RowValue) -> any View
+
+    /**
+     We have to be explicit here or else problems upstream.
+     By default, methods of any struct conforming to View inherit the MainActor isolation.
+     This implict vs explitic crap is annoying.
+     */
+    var cellView: @MainActor @Sendable (_ item: RowValue) -> any View
 
     // MARK: - Introspection -
 
-    public typealias IntrospectBlock = (
-        _ tableColumn: NSTableColumn
-    ) -> Void
-
+    public typealias IntrospectBlock = @MainActor @Sendable (_ tableColumn: NSTableColumn) -> Void
     internal var introspectBlocks: [IntrospectBlock] = []
 
     // MARK: - Init -
@@ -57,7 +60,7 @@ where RowValue: Identifiable, RowValue: Equatable
     public init(
         _ title: String,
         id: String = UUID().uuidString,
-        cellView: @escaping (_ item: RowValue) -> any View
+        cellView: @MainActor @Sendable @escaping (_ item: RowValue) -> any View
     ) {
         self.title = title
         self.id = NSUserInterfaceItemIdentifier(rawValue: id)

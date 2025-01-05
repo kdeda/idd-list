@@ -166,6 +166,7 @@ struct AppRootView: View {
     }
 }
 
+@MainActor
 fileprivate func store() -> StoreOf<AppRoot> {
     let state = AppRoot.State()
 

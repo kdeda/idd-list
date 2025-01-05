@@ -10,14 +10,14 @@ import Foundation
 import ComposableArchitecture
 import XCTestDynamicOverlay
 
-public struct FileClient {
+public struct FileClient: Sendable {
     /**
      Given a url, return all files under it
      Start fetching files under ~/Desktop ...
      This will work because we removed entitlements from this app
      */
-    let fetchFiles: (_ url: URL) async -> [File]
-    let loadAnotherBatch: (_ url: URL, _ batchID: Int) async -> [File]
+    let fetchFiles:       @Sendable (_ url: URL) async -> [File]
+    let loadAnotherBatch: @Sendable (_ url: URL, _ batchID: Int) async -> [File]
 }
 
 extension DependencyValues {
@@ -33,12 +33,13 @@ extension FileClient: DependencyKey {
         // "/Volumes/Vault/Library/FoldersWithLotsOfFiles/18000 files"
         let maxCount = 100_000
         // let maxCount = 10
-        var files: [File] = []
+        let files: LockIsolated<[File]> = .init([])
 
+        @Sendable
         func fetchFiles(url: URL, batchID: Int) -> [File] {
             let files = {
                 guard files.isEmpty
-                else { return files }
+                else { return files.value }
 
                 // load once
                 let files_ = url
@@ -47,8 +48,10 @@ extension FileClient: DependencyKey {
                     .map { File.init(fileURL: $0.element) }
                     .sorted { $0.fileName > $1.fileName }
 
-                files = Array(files_.prefix(min(files_.count, maxCount)))
-                return files
+                files.withValue {
+                    $0 = Array(files_.prefix(min(files_.count, maxCount)))
+                }
+                return files.value
             }()
 
             if batchID == 0 {
@@ -58,6 +61,7 @@ extension FileClient: DependencyKey {
             let newValues: [File] = files.map { file in
                 var newCopy = file
 
+                newCopy.id = .init()
                 newCopy.batchID = batchID
                 newCopy.fileName = newCopy.fileName + " (\(batchID))"
                 newCopy.logicalSize += newCopy.logicalSize * Int64.random(in: newCopy.logicalSize ... newCopy.logicalSize * 10)

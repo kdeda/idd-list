@@ -14,7 +14,7 @@ import Log4swift
  Example: https://github.com/aiaf/MKKRightToLeftScrollView/tree/master?tab=readme-ov-file
  */
 public class TableScrollView<RowValue>: NSScrollView
-where RowValue: Identifiable, RowValue: Equatable
+where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
 {
     public let tableView: TableView<RowValue>
     

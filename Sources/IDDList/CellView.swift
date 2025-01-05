@@ -11,9 +11,13 @@ import SwiftUI
 
 public struct CellView<Content>: View where Content: View {
     @EnvironmentObject var cellModel: CellModel
-    let content: (_ cellModel: CellModel) -> Content
+    let content: @MainActor @Sendable (_ cellModel: CellModel) -> Content
 
-    public init(@ViewBuilder content: @escaping (_ cellModel: CellModel) -> Content) {
+    /**
+     By default, methods of any struct conforming to View inherit the MainActor isolation.
+     So here content is implicitly @MainActor as well.
+     */
+    public init(@ViewBuilder content: @MainActor @Sendable @escaping (_ cellModel: CellModel) -> Content) {
         self.content = content
     }
 

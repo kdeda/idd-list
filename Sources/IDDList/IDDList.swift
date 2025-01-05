@@ -13,7 +13,7 @@ import Log4swift
 import DifferenceKit
 
 public struct IDDList<RowValue>: NSViewRepresentable
-where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
+where RowValue: Identifiable, RowValue: Hashable, RowValue: Equatable, RowValue: Sendable
 {
     enum SelectionType {
         case single
@@ -303,7 +303,11 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                 let moved = changeset.reduce(into: 0) { $0 += $1.elementMoved.count }
                 let inserted = changeset.reduce(into: 0) { $0 += $1.elementInserted.count }
 
-                Log4swift[Self.self].info("tagID: '\(tagID)' deleted: '\(deleted.decimalFormatted)' updated: '\(updated.decimalFormatted)' moved: '\(moved.decimalFormatted)' inserted: '\(inserted.decimalFormatted)' from rows: '\(rows.count.decimalFormatted)' elapsedTime: '\(startDate.elapsedTime)'")
+                if startDate.elapsedTimeInMilliseconds > 100 {
+                    Log4swift[Self.self].info("tagID: '\(tagID)' deleted: '\(deleted.decimalFormatted)' updated: '\(updated.decimalFormatted)' moved: '\(moved.decimalFormatted)' inserted: '\(inserted.decimalFormatted)' from rows: '\(rows.count.decimalFormatted)' elapsedTime: '\(startDate.elapsedTime)'")
+                }
+
+                // Log4swift[Self.self].info("tagID: '\(tagID)' 1.tableView.frame: '\(tableView.frame)' enclosingScrollView.frame: '\(tableView.enclosingScrollView!.frame)' documentView.frame: '\(tableView.enclosingScrollView!.documentView!.frame)'")
                 if moved > 5 {
                     // when moved is present the `reload(using:` behaves as if its
                     // rotating over the horizontal axis
@@ -316,6 +320,30 @@ where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
                     tableView.reload(using: changeset, with: .effectFade) { data in
                         context.coordinator.rows = data
                     }
+                }
+                // Log4swift[Self.self].info("tagID: '\(tagID)' 3.tableView.frame: '\(tableView.frame)' enclosingScrollView.frame: '\(tableView.enclosingScrollView!.frame)' documentView.frame: '\(tableView.enclosingScrollView!.documentView!.frame)'")
+                // Log4swift[Self.self].info("tagID: '\(tagID)' 3.tableView.fittingSize: '\(tableView.fittingSize)'")
+
+                /**
+                 Had an interesting glitch.
+                 I was using a sheet window that has a view that is able to switch between multiple tablew views.
+                 Each tableview has a different number of rows and is thus reloaded as we switch.
+                 However if i went from a table view with say 1000 rows into one with 10 the tableView frame did not properly reflect this size change.
+                 The table view does call the heightOfRow to calculate the new height which is in the fittingSize
+
+                 So for some reason the tableView frame does not get magically updated ...
+                 Without me forcing the size from the fittingSize into the frame this code would glitch.
+                 https://stackoverflow.com/questions/14220972/automatically-adjust-height-of-a-nstableview
+                 January 5, 2025
+                 */
+                var newSize = tableView.frame.size
+                let fittingSizeHeight = tableView.fittingSize.height
+
+                if newSize.height != fittingSizeHeight {
+                    // not sure why this happens
+                    // Log4swift[Self.self].info("tagID: '\(tagID)' 4.tableView.frame: '\(tableView.frame)'  tableView.fittingSize: '\(tableView.fittingSize)'")
+                    newSize.height = fittingSizeHeight
+                    tableView.setFrameSize(newSize)
                 }
             }
 

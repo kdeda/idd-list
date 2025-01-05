@@ -11,7 +11,7 @@ import SwiftUI
 import Log4swift
 
 public class TableView<RowValue>: NSTableView
-where RowValue: Identifiable, RowValue: Equatable
+where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
 {
     public var axes: Axis.Set = [.horizontal, .vertical]
     var tagID: String = ""
@@ -40,7 +40,7 @@ where RowValue: Identifiable, RowValue: Equatable
         super.init(frame: .zero)
 
         // column setup
-        columns
+        try? columns
             .map(NSTableColumn.init)
             .forEach(self.addTableColumn)
 

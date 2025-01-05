@@ -15,7 +15,7 @@ import DifferenceKit
  We wrap it in this we can use DifferenceKit
  */
 public struct TableRowValue<RowValue>
-where RowValue: Equatable, RowValue: Identifiable, RowValue: Hashable
+where RowValue: Identifiable, RowValue: Hashable, RowValue: Equatable, RowValue: Sendable
 {
     let value: RowValue
     public init(rowValue: RowValue) {
@@ -30,4 +30,5 @@ extension TableRowValue: Identifiable where RowValue: Identifiable {
     }
 }
 extension TableRowValue: Hashable where RowValue: Hashable {}
+extension TableRowValue: Sendable where RowValue: Sendable {}
 extension TableRowValue: Differentiable {}

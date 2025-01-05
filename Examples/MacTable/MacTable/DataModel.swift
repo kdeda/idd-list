@@ -48,7 +48,7 @@ extension Car: Comparable {
 }
 
 struct Store {
-    static var dateFormat: DateFormatter = {
+    static let dateFormat: DateFormatter = {
         let rv = DateFormatter.init()
         
         rv.dateFormat = "MM/dd/yyyy"

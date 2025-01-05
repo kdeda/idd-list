@@ -12,11 +12,11 @@ import IDDSwift
 import Log4swift
 import XCTestDynamicOverlay
 
-public struct CSVClient {
+public struct CSVClient: Sendable {
     /**
      Given a CSV file, return a stream of all rows in it.
      */
-    let parseCSVFile: (_ url: URL) -> AsyncStream<[CSVRow]>
+    let parseCSVFile: @Sendable (_ url: URL) -> AsyncStream<[CSVRow]>
 }
 
 extension DependencyValues {

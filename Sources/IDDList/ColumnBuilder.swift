@@ -10,7 +10,7 @@ import Foundation
 
 @resultBuilder
 public enum ColumnBuilder<RowValue>
-where RowValue: Identifiable, RowValue: Equatable
+where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
 {
     public static func buildBlock(_ components: Column<RowValue>...) -> [Column<RowValue>] {
         components

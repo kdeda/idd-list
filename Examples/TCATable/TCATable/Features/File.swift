@@ -11,7 +11,7 @@ import AppKit
 import IDDSwift
 
 struct File: Equatable, Identifiable {
-    static var lastModified: DateFormatter = {
+    static let lastModified: DateFormatter = {
         let rv = DateFormatter.init()
         
         rv.formatterBehavior = .behavior10_4
