@@ -16,6 +16,30 @@ where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
     public var axes: Axis.Set = [.horizontal, .vertical]
     var tagID: String = ""
     @Binding private var makeFirstResponder: Bool
+    private var didEmittSelection = false
+
+    /**
+     Usefull for some really OCD stuff.
+     In theory upstream should receive selection binding changes when the selection changes
+     from the selectRowIndexes flow.
+     However selectRowIndexes is not called if you click on the same row.
+
+     People that always want to know that we clicked, even if it's the same row
+     can set this value during the implementation of .introspect
+
+     To be clear, if the selectRowIndexes is called this is not.
+     So again this func is called only if you click on the same row, which also means the selectRowIndexes will be absent.
+     ```
+     .introspect { tableView, scrollView in
+         tableView.intercellSpacing = .init(width: 10, height: 0)
+         tableView.usesAlternatingRowBackgroundColors = true
+         tableView.singleClick = {
+             store.send(.singleClick($0))
+         }
+     }
+     ```
+     */
+    public var singleClick: (_ selectedRowIndexes: IndexSet) -> Void = { _ in }
 
     /**
      Default value does nothing.
@@ -66,6 +90,7 @@ where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
 
         self.sortDescriptors = columns.compactMap(\.sortDescriptor)
         self.rowHeight = 22.0
+        self.action = #selector(singActionIMP(_:))
         self.doubleAction = #selector(doubleActionIMP(_:))
 
         Log4swift[Self.self].trace("created: '\(self.sortDescriptors)'")
@@ -88,11 +113,21 @@ where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
 
     // MARK: - NSView Overrides -
 
+    public override func mouseDown(with theEvent: NSEvent) {
+        Log4swift[Self.self].debug("tagID: '\(tagID)' event: '\(theEvent)'")
+
+        didEmittSelection = false
+        super.mouseDown(with: theEvent)
+        Log4swift[Self.self].debug("tagID: '\(tagID)' event: '\(theEvent)'")
+    }
+
     /**
      Push changes back into the model
+     This is not emitted if we click on the same row. ie: not selection change.
      */
     public override func selectRowIndexes(_ indexes: IndexSet, byExtendingSelection extend: Bool) {
         Log4swift[Self.self].debug("tagID: '\(tagID)' will select, rowIDs: '\(rowIDs(indexes))'")
+        didEmittSelection = true
         super.selectRowIndexes(indexes, byExtendingSelection: extend)
 
         Log4swift[Self.self].debug("tagID: '\(tagID)' did select, rowIDs: '\(rowIDs(self.selectedRowIndexes))'")
@@ -152,6 +187,13 @@ where RowValue: Identifiable, RowValue: Equatable, RowValue: Sendable
             }
         }
         return rv
+    }
+
+    @objc private func singActionIMP(_ sender: Any) {
+        Log4swift[Self.self].debug("tagID: '\(tagID)' didEmittSelection: '\(didEmittSelection)'")
+        guard !didEmittSelection
+        else { return }
+        singleClick(self.selectedRowIndexes)
     }
 
     @objc private func doubleActionIMP(_ sender: Any) {

@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 import Log4swift
 
+@MainActor
 public final class CellModel: ObservableObject {
     @Published public var isHighlighted: Bool = false
 
@@ -27,11 +28,13 @@ public final class CellModel: ObservableObject {
      */
     public func updateIsHighlighted(_ newValue: Bool) {
         if self.isHighlighted != newValue {
-            /**
-             We want to publish the changes but from the main thread only
-             */
-            Log4swift[Self.self].debug("backgroundStyle: '\(self.objectID)' isHighlighted: '\(newValue)' was: '\(self.isHighlighted)'")
-            self.isHighlighted = newValue
+            Task { @MainActor in
+                /**
+                 We want to publish the changes but from the main thread only
+                 */
+                Log4swift[Self.self].debug("backgroundStyle: '\(self.objectID)' isHighlighted: '\(newValue)' was: '\(self.isHighlighted)'")
+                self.isHighlighted = newValue
+            }
         }
     }
 }
