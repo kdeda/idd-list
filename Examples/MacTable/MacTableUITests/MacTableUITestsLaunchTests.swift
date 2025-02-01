@@ -3,7 +3,7 @@
 //  MacTableUITests
 //
 //  Created by Klajd Deda on 01/05/23.
-//  Copyright (C) 1997-2024 id-design, inc. All rights reserved.
+//  Copyright (C) 1997-2025 id-design, inc. All rights reserved.
 //
 
 import XCTest
